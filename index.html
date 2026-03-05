@@ -1,0 +1,2284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NextGen Realtors · Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:       #0D0F12;
+  --bg2:      #141619;
+  --bg3:      #1A1D22;
+  --bg4:      #20242A;
+  --border:   rgba(212,168,67,0.12);
+  --gold:     #C9A84C;
+  --gold-dim: rgba(201,168,76,0.15);
+  --red:      #E05252;
+  --red-dim:  rgba(224,82,82,0.12);
+  --orange:   #E07B34;
+  --orange-dim:rgba(224,123,52,0.12);
+  --green:    #3DAA6C;
+  --green-dim:rgba(61,170,108,0.12);
+  --blue:     #4A90D9;
+  --blue-dim: rgba(74,144,217,0.12);
+  --text:     #E8EAF0;
+  --muted:    #6B7280;
+  --mono:     'JetBrains Mono', monospace;
+  --serif:    'Playfair Display', Georgia, serif;
+  --sans:     'DM Sans', sans-serif;
+  --r:        12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); }
+
+/* ── Layout ─────────────────────────────────────────── */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(13,15,18,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px; overflow-x: auto;
+}
+.nav::-webkit-scrollbar { display: none; }
+.nav-logo { margin-right: 12px; opacity: 0.9; flex-shrink: 0; }
+.nav-logo img { height: 36px; width: 36px; border-radius: 6px; }
+.nav-tab {
+  padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+  cursor: pointer; border: none; background: transparent; color: var(--muted);
+  white-space: nowrap; flex-shrink: 0; transition: all .2s; font-family: var(--sans);
+}
+.nav-tab.active { background: var(--gold); color: #0D0F12; font-weight: 700; }
+.nav-tab:hover:not(.active) { color: var(--text); background: var(--bg3); }
+.nav-live { margin-left: auto; flex-shrink: 0; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+
+.panel { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
+.panel.active { display: block; }
+
+/* ── Banner ─────────────────────────────────────────── */
+.banner {
+  font-size: 12px; font-family: var(--mono); padding: 6px 14px;
+  border-radius: 6px; margin-bottom: 16px;
+  background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.banner.live   { background: var(--green-dim); border-color: rgba(61,170,108,.3); color: var(--green); }
+.banner.error  { background: var(--red-dim);   border-color: rgba(224,82,82,.3);  color: var(--red); }
+
+/* ── Command panel ──────────────────────────────────── */
+.cmd-hero { padding: 28px 0 20px; }
+.cmd-greeting { font-family: var(--serif); font-size: clamp(28px,4vw,44px); line-height: 1.1; margin-bottom: 6px; }
+.cmd-greeting em { color: var(--gold); font-style: italic; }
+.cmd-sub { color: var(--muted); font-size: 14px; }
+
+.kpi-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 20px; }
+@media(max-width:900px){ .kpi-grid{grid-template-columns:repeat(3,1fr)} }
+@media(max-width:560px){ .kpi-grid{grid-template-columns:repeat(2,1fr)} }
+
+.kpi-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 18px 16px;
+  border-top: 3px solid var(--accent, var(--gold));
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0,0,0,.3);
+  border-color: var(--accent, var(--gold));
+}
+.kpi-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.kpi-value { font-family: var(--mono); font-size: 32px; font-weight: 600; color: var(--text); line-height: 1; margin-bottom: 4px; }
+.kpi-delta { font-size: 11px; color: var(--muted); }
+
+.cmd-bottom { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+@media(max-width:900px){ .cmd-bottom{grid-template-columns:1fr} }
+
+/* ── Call list ──────────────────────────────────────── */
+.section-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden;
+}
+.section-hdr {
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.section-title { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); flex: 1; }
+.today-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
+.today-toggle input { cursor: pointer; accent-color: var(--gold); }
+.refresh-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 2px 4px; }
+.refresh-btn:hover { color: var(--gold); }
+
+.call-item {
+  padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.04);
+  cursor: pointer; transition: background .15s;
+  border-left: 3px solid transparent;
+  display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+}
+.call-item:hover { background: rgba(201,168,76,.04); }
+.call-item.overdue  { border-left-color: var(--red); }
+.call-item.due-today{ border-left-color: var(--orange); }
+.call-item.follow-ok{ border-left-color: var(--green); }
+.call-name  { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.call-meta  { font-size: 12px; color: var(--muted); }
+.call-badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+.call-due   { font-size: 11px; font-family: var(--mono); font-weight: 600; }
+.due-overdue{ color: var(--red); }
+.due-today  { color: var(--orange); }
+.due-ok     { color: var(--muted); }
+
+/* ── AI Advisory ────────────────────────────────────── */
+.advisory-card {
+  background: linear-gradient(135deg, var(--bg3) 0%, rgba(201,168,76,.06) 100%);
+  border: 1px solid var(--border); border-radius: var(--r); padding: 18px;
+  height: 100%;
+}
+.advisory-title { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+.advisory-item { font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: 10px; padding-left: 16px; position: relative; }
+.advisory-item::before { content: "→"; position: absolute; left: 0; color: var(--gold); }
+
+/* ── Funnel + Source ROI ────────────────────────────── */
+.cmd-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+@media(max-width:700px){ .cmd-row2{grid-template-columns:1fr} }
+
+.funnel-stage { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.04); transition: background .15s; border-radius: 6px; padding-left: 4px; }
+.funnel-stage:hover { background: rgba(201,168,76,.06); }
+.source-row:hover   { background: rgba(201,168,76,.06); }
+.funnel-label { font-size: 12px; color: var(--muted); width: 100px; flex-shrink: 0; }
+.funnel-bar-wrap { flex: 1; background: var(--bg4); border-radius: 4px; height: 8px; overflow: hidden; }
+.funnel-bar { height: 100%; border-radius: 4px; background: var(--gold); transition: width .6s ease; }
+.funnel-count { font-size: 12px; font-family: var(--mono); color: var(--text); width: 28px; text-align: right; }
+
+.source-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: 12px; }
+.source-name { color: var(--muted); }
+.source-count { font-family: var(--mono); color: var(--text); font-weight: 600; text-align: right; }
+.source-pct  { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: right; width: 36px; }
+
+/* ── TODAY'S PRIORITY box ───────────────────────────── */
+.priority-box {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 16px; margin-left: auto; width: 280px;
+}
+@media(max-width:700px){ .priority-box{width:100%;margin-left:0;margin-top:16px} }
+.priority-hdr { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+.priority-item { font-size: 13px; line-height: 1.5; color: var(--text); margin-bottom: 6px; }
+
+/* ── Leads panel ────────────────────────────────────── */
+.leads-toolbar {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px;
+}
+.leads-toolbar input, .leads-toolbar select {
+  background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 7px 11px; font-size: 13px; font-family: var(--sans);
+}
+.leads-toolbar input:focus, .leads-toolbar select:focus { outline: none; border-color: var(--gold); }
+.leads-toolbar input[type=date] { color-scheme: dark; }
+.leads-search { flex: 1; min-width: 180px; }
+.btn-sm {
+  padding: 7px 13px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg3); color: var(--text); font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: var(--sans); white-space: nowrap;
+}
+.btn-sm:hover { border-color: var(--gold); color: var(--gold); }
+.btn-gold { background: var(--gold); color: #0D0F12; border-color: var(--gold); }
+.btn-gold:hover { opacity: .9; color: #0D0F12; }
+
+.leads-table-wrap { overflow-x: auto; border-radius: var(--r); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; }
+th {
+  padding: 10px 12px; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted); background: var(--bg3);
+  text-align: left; white-space: nowrap; cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--border);
+}
+th:hover { color: var(--gold); }
+th.asc::after  { content: " ↑"; color: var(--gold); }
+th.desc::after { content: " ↓"; color: var(--gold); }
+td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
+tr:hover td { background: rgba(201,168,76,.03); }
+tr:last-child td { border-bottom: none; }
+
+.status-pill {
+  display: inline-block; padding: 3px 9px; border-radius: 10px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.pill-hot    { background: var(--red-dim);    color: var(--red);    }
+.pill-active { background: var(--gold-dim);   color: var(--gold);   }
+.pill-warm   { background: var(--orange-dim); color: var(--orange); }
+.pill-cold   { background: var(--blue-dim);   color: var(--blue);   }
+.pill-closed { background: var(--green-dim);  color: var(--green);  }
+
+.score-ring { display: inline-flex; align-items: center; gap: 5px; }
+.score-ring svg { flex-shrink: 0; }
+.src-badge { display: inline-block; padding: 2px 7px; border-radius: 8px; font-size: 10px; font-weight: 600; background: var(--bg4); color: var(--muted); }
+
+/* ── Pipeline panel ─────────────────────────────────── */
+.pipe-board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+.pipe-board::-webkit-scrollbar { height: 4px; }
+.pipe-board::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.pipe-col { min-width: 200px; flex: 1; background: var(--bg3); border-radius: var(--r); border: 1px solid var(--border); overflow: hidden; }
+.pipe-col-hdr { padding: 10px 14px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; display: flex; justify-content: space-between; }
+.pipe-count { background: rgba(255,255,255,.1); border-radius: 10px; padding: 1px 7px; }
+.pipe-card {
+  margin: 8px; padding: 12px; border-radius: 8px;
+  background: var(--bg4); border: 1px solid rgba(255,255,255,.05);
+  cursor: pointer; transition: transform .15s, box-shadow .15s;
+  border-left: 3px solid var(--card-accent, var(--gold));
+}
+.pipe-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+.pipe-card-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.pipe-card-meta { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+.pipe-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.pipe-score { font-size: 11px; font-family: var(--mono); }
+.pipe-comm  { font-size: 11px; font-weight: 700; color: var(--green); }
+
+/* ── Modal ──────────────────────────────────────────── */
+.overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.75); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.overlay.open { display: flex; }
+.modal {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 16px;
+  width: 100%; max-width: 760px; max-height: 90vh; overflow-y: auto;
+}
+@media(max-width:600px){
+  .overlay { align-items: flex-end; padding: 0; }
+  .modal { border-radius: 16px 16px 0 0; max-height: 92vh; }
+}
+.modal-hdr { padding: 20px 24px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+.modal-name { font-family: var(--serif); font-size: 22px; }
+.modal-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; }
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 16px 24px 24px; }
+.modal-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.m-tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--muted); background: none; border: none; font-family: var(--sans); }
+.m-tab.active { background: var(--gold); color: #0D0F12; }
+.m-tab:hover:not(.active) { color: var(--text); }
+.m-pane { display: none; }
+.m-pane.active { display: block; }
+
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+@media(max-width:500px){ .info-grid{grid-template-columns:1fr} }
+.info-cell { background: var(--bg4); border-radius: 8px; padding: 10px 12px; }
+.info-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+.info-val   { font-size: 14px; font-weight: 500; }
+
+.prop-card { background: var(--bg4); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+.prop-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.prop-meta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.prop-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.prop-btn { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg3); color: var(--text); font-family: var(--sans); }
+.prop-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+.stage-select { background: var(--bg4); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: var(--sans); width: 100%; margin-bottom: 10px; }
+.note-input { width: 100%; background: var(--bg4); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 13px; font-family: var(--sans); resize: vertical; min-height: 80px; }
+.note-input:focus, .stage-select:focus { outline: none; border-color: var(--gold); }
+.history-entry { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+.history-date { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-bottom: 3px; }
+
+/* ── Quick Add FAB ──────────────────────────────────── */
+.fab {
+  position: fixed; bottom: 24px; right: 24px; z-index: 150;
+  width: 54px; height: 54px; border-radius: 50%;
+  background: linear-gradient(135deg, #D4A843, #B8892F);
+  border: none; color: #0D0F12; font-size: 26px; font-weight: 300;
+  cursor: pointer; box-shadow: 0 4px 20px rgba(201,168,76,.4);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .2s, box-shadow .2s;
+}
+.fab:hover { transform: scale(1.1) rotate(15deg); box-shadow: 0 6px 28px rgba(201,168,76,.6); }
+@media(max-width:600px){ .fab{width:48px;height:48px;font-size:22px;bottom:16px;right:16px} }
+
+/* ── Quick Add Modal ────────────────────────────────── */
+.qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media(max-width:500px){ .qa-grid{grid-template-columns:1fr} }
+.qa-field label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 5px; }
+.qa-field input, .qa-field select {
+  width: 100%; background: var(--bg4); border: 1px solid var(--border);
+  color: var(--text); border-radius: 8px; padding: 9px 12px;
+  font-size: 13px; font-family: var(--sans);
+}
+.qa-field input:focus, .qa-field select:focus { outline: none; border-color: var(--gold); }
+.qa-full { grid-column: 1/-1; }
+
+/* ── Commission Calc ────────────────────────────────── */
+.calc-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 14px; }
+.calc-row.total { border-bottom: none; background: var(--gold-dim); border-radius: 8px; padding: 12px; margin-top: 8px; }
+.calc-label { color: var(--muted); }
+.calc-val   { font-family: var(--mono); font-weight: 600; }
+.calc-val.gold { color: var(--gold); font-size: 18px; }
+
+/* ── Referrals panel ────────────────────────────────── */
+.ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:700px){ .ref-grid{grid-template-columns:1fr} }
+.ref-section { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.ref-section-hdr { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
+.ref-row { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,.04); font-size: 13px; }
+.ref-rank { font-family: var(--mono); font-size: 12px; color: var(--muted); width: 20px; text-align: center; }
+.ref-name { font-weight: 600; }
+.ref-meta { font-size: 11px; color: var(--muted); }
+.ref-comm { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--green); text-align: right; }
+.tier-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+.tier-gold   { background: var(--gold-dim);  color: var(--gold); }
+.tier-silver { background: var(--blue-dim);  color: var(--blue); }
+.tier-bronze { background: var(--orange-dim);color: var(--orange); }
+
+.pay-form { padding: 16px; display: grid; gap: 10px; }
+.pay-form input {
+  width: 100%; background: var(--bg4); border: 1px solid var(--border);
+  color: var(--text); border-radius: 8px; padding: 9px 12px;
+  font-size: 13px; font-family: var(--sans);
+}
+.pay-form input:focus { outline: none; border-color: var(--gold); }
+.pay-form input::placeholder { color: var(--muted); }
+
+/* ── Scripts panel ──────────────────────────────────── */
+.scripts-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.script-tag { padding: 5px 13px; border-radius: 16px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; border: 1px solid var(--border); background: var(--bg3); color: var(--muted); font-family: var(--sans); }
+.script-tag.active, .script-tag:hover { background: var(--gold); color: #0D0F12; border-color: var(--gold); }
+.script-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 12px; overflow: hidden; }
+.script-card-hdr { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.script-title { font-size: 13px; font-weight: 700; }
+.script-copy-btn { padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg4); color: var(--muted); font-family: var(--sans); }
+.script-copy-btn:hover { border-color: var(--gold); color: var(--gold); }
+.script-body { padding: 14px 16px; font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; font-family: var(--mono); font-size: 12px; }
+
+/* ── Score panel ────────────────────────────────────── */
+.score-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.score-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; cursor: pointer; transition: border-color .2s; border-left: 4px solid var(--card-accent, var(--gold)); }
+.score-card:hover { border-color: var(--gold); }
+.score-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.score-meta { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.score-bar-wrap { background: var(--bg4); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 6px; }
+.score-bar { height: 100%; border-radius: 4px; transition: width .6s; }
+.score-nums { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+/* ── KB hint ────────────────────────────────────────── */
+.kb-hint {
+  display: none; position: fixed; bottom: 90px; right: 24px; z-index: 140;
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; font-size: 12px; min-width: 200px;
+}
+.kb-hint.open { display: block; }
+.kb-hint-title { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+.kb-row { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; color: var(--muted); }
+kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-family: var(--mono); font-size: 11px; color: var(--text); }
+
+/* ── Toast ──────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 20px; font-size: 13px; font-weight: 600;
+  z-index: 300; pointer-events: none; white-space: nowrap;
+  animation: toastIn .25s ease;
+}
+@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+/* ── Utility ────────────────────────────────────────── */
+.empty { padding: 32px; text-align: center; color: var(--muted); font-size: 13px; }
+.wa-btn { background: rgba(37,211,102,.12); border: 1px solid rgba(37,211,102,.25); color: #25D366; border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--sans); }
+.wa-btn:hover { background: rgba(37,211,102,.2); }
+
+/* ── Inventory table ────────────────────────────────────── */
+.inv-status-available { background: var(--green-dim); color: var(--green); }
+.inv-status-lowstock  { background: var(--orange-dim); color: var(--orange); }
+.inv-status-soldout   { background: var(--red-dim);   color: var(--red); }
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo"><img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAIXBGsDASIAAhEBAxEB/8QAHQABAQACAwEBAQAAAAAAAAAAAAEGBwIFCAQDCf/EAF8QAAIBAwIBBAkNCgsGBAUFAAABAgMEBQYRBxIhMUEIE1FVYXGBpNEUIjI2VpGTlKGxstLTFTU3QlJUcnN0wRYjRUZidYKVo6WzM0OSorThJCU0UxcYwsPwJkRjhPH/xAAaAQEAAgMBAAAAAAAAAAAAAAAABAUBAgMG/8QANREBAAIBAgIIBAYDAAMBAQAAAAECAwQRITEFEhMUQVFSkTJhcYEiM6GxwfA00eEVIyRC8f/aAAwDAQACEQMRAD8A8kFIUAUhQAAAqKRFABAICgAAUhQKAAKgEAKEAgKAABSFAoAAIpEUAVEKBQQoApCoAUhQCKRFAAAClIUAVEKgAAAqKRFAAAClIAKEAgKAAKgQoFAAFAAAqIVAUAACkKBQAAKRFAFRCoAUhQBSFAAACopEUAEABSkKAKQAUAAVAIAUAAUAACohUBQAARSFAoAAoIigCohUAKQoApCgAABUUiKACAApSFAABAUAAVAhQKAAKCIoAqIAOQIUAUgQFKQoBFIAKAANelIUAUhQAAAqKRAChAAUAACkKgKAACKRFAoAAoAAFRCoCgAAikRQAAApSFAFRCoAUhQCKQoAAAUpCgAgEBQABSkAFAAFAQAoQCAoAAFIUCgACoERQBUQoFAAApCgCkKARSIoAAAUpCgCkCAoAAqKRFAAACgAChAICgAAikKBQABQRFAFRCgUAACkKgBSFAIpEUAAAKUhQBUQICgACopxKBQABUCIoFCAAoAAFIVAUEKARSFAAACopEUAAAKUiAFCAAoIUDXpSFABAICgACoBACgACgAAVEKgKAACKQoFAAFBCgCohUAKQoApCgAABSkRQAQCApSFAFIUAAAKikQAoQAFAAApCgUAAVAiKBQABQAAKQqAoAAIpEUAAAKUhQBUQIClIUAikKAAAFKRFABAICgAAUhQKAAKgRFAoQAFAAApCoCgAAikKAAAFKRFAFRAgKUhQBSACgACopEAKAAKAABUQqAoAAFIUCghQCKRFAAAClIigAgAKAABSFQFAAApCoCghQCKQb+ADXwAAoQCAoAAFIUCgACgIACohUBQAAKQoFBCgEUiKAKiBAUpCgCkKAAAFRSIoAIAClIUAAEBQABUAgBQABQAAKiFQFAABFIUCgACgiKAKiFQApCgCkKAAAFRSIoAIAClIUAUgQFAAFQCAFAAFAAAqIVAUAAEUhQKAABSIoAqIAKUhQBSFQAAAVFIigAABSkQAoQCAoAAFIVAUAAEUiKAAAFKRFABAAUpCgCkCAoAAIpCgUAAEUhQAAApSIoAAAUERQKAANfIBAChAICgAAUhQKAACKRFAFRAByBCgCkKgBSFAIpEUAAAKUhQBUQICgACopABQABQEAKEAgKAABSFAoAAqBEUAVEKBQAAKQoApCgEUiKAAAFKQoAqIEBQABUUgAoAAoCAFCAQFAAApCgUAAEUiKAKiADkCFAFIVACkKARSFAAAClIigAgAKAA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AABQQAcgQAUAAAABQQAUAAAABhgAAFIVAUEKAKQqAAACopxKBQABQRFAoAAoIigCogApSFABAAUAACkKgKAABSFQFBCgEUgAoAAqBCgUAAUEKAAAFKRFAAACgiKBQABQRFAAAClIgBQABQRFAFIAKUiKAAAFBCgUAACkKAAAFQIVAUAACkAFAAApAByBCgAABQQoFBCgEUgQFAAApABSkQAoAAFIAKAABSADkCACgAAUgAoIUCghQAAAoIAKAAAAAoIAOQIAKAAAAAFIAMMRSFAAAClIgBQgAKAgAKiADkCFAFIEBSkKAKQICgACoEKBQAARSFAAAClIigAABSkQAoQAFBCgCogApSFABAAUAACkKBQQoApABSkKACAAoAAFIAOQIUAUgAoAAFRAByBCgAgAKUiAFAAFBEUAAAKU4lAoAAIpAgKAABSFAoIUAAAKCFAoIUAUgAoAAFIAKUgAoAAFIAKAAAAApTiUCghQAAAoIAKUgAoIUAUgAoIUAAAAAAoIAKUgAoIUDDAgAKAABSFQFAABFIUAAAKikAFAAFBEUCgACgiKAKiAClIUAEABQAAKQqAoAAFIEByBCgCkCAoAAIpCgUAAEUhUAAAFRTiUCgAAikKBQQoBFIAKAAKgQoFAABFIEBQABQQqAoAAFIAKUgAoQAFBCgAABSnEoFAABFIAKAAKCFAoIUAAAKCFAoIUAUgAoAAAAClOJQKCFAAACghQAAAoIAOQIAKAABSACghQKCACgAAUgAoIAKAAAAAF3IAMOBCgEUiKAAAFKRFABAAUAACohQKCFAFIEBSkKAKQICgACoEKBQAARSFAAAClIUAAAKCIoFAAFBEUAAAKUiAFAAFBEUAUgApSIoAAAUpxRQKAAKCIoAAAUpxKBQABQQoAAAVFOJQKAABSBAUpCgAABQQoApABSkQAoAAFIAKAAKCFAoIUAAAKCFAoIUAAAKCFAAACghQKCFAAACggAoAAAAClOJQKCFAAAAUgAoIUCggAoIUAAAKCACghQMNKAAAAFAAAoAFAAAoAAAAVFAAAACgACgACgAAAAKUAAEABQAAKgAKAABQABQAAAAoAAFAAoAAFAAAAAUACgAAUAAUAAAAKAABUAAKAAAAFAAAAAUoAAAAVAACgAAAAKAABQABQAAAAFAAAAAUACgAAAAKAAKAAAAAoAAAAAUAAUAAAABQAAAAAAAUAAUAAAAAAAFAAAAAUAAAAAAA//9k=" alt="NextGen Realtors" style="height:38px;width:auto;border-radius:6px;object-fit:contain"></div>
+  <button class="nav-tab active" onclick="switchTab('cmd',this)">⚡ Command</button>
+  <button class="nav-tab" onclick="switchTab('leads',this)">👥 Leads</button>
+  <button class="nav-tab" onclick="switchTab('score',this)">🎯 Score</button>
+  <button class="nav-tab" onclick="switchTab('pipeline',this)">📊 Pipeline</button>
+  <button class="nav-tab" onclick="switchTab('scripts',this)">💬 Scripts</button>
+  <button class="nav-tab" onclick="switchTab('inventory',this)">🏗 Inventory</button>
+  <button class="nav-tab" onclick="switchTab('referrals',this)">🤝 Referrals</button>
+  <button class="nav-tab" onclick="switchTab('inventory',this)">🏗 Inventory</button>
+  <div class="nav-live" id="nav-live"><span class="live-dot" id="live-dot" style="background:var(--muted)"></span><span id="live-label">Connecting...</span></div>
+</nav>
+
+<!-- BANNER -->
+<div style="max-width:1400px;margin:0 auto;padding:10px 20px 0">
+  <div class="banner" id="banner">◌ Connecting to Google Sheets...</div>
+</div>
+
+<!-- ══ COMMAND PANEL ══ -->
+<div class="panel active" id="panel-cmd">
+  <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+    <div style="flex:1;min-width:240px">
+      <div class="cmd-hero">
+        <div class="cmd-greeting">Good <em id="greeting-word">morning</em>,<br>Rushabh.</div>
+        <div class="cmd-sub">Your brokerage intelligence system is live.</div>
+      </div>
+    </div>
+    <div class="priority-box">
+      <div class="priority-hdr">⚡ Today's Priority</div>
+      <div id="priority-content" style="color:var(--muted);font-size:13px">Loading...</div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card" style="--accent:var(--red);cursor:pointer" onclick="kpiDrill('hot')" title="View hot leads">
+      <div class="kpi-label">🔥 Hot Leads</div>
+      <div class="kpi-value" id="kpi-hot">—</div>
+      <div class="kpi-delta">call within 2 hours ↗</div>
+    </div>
+    <div class="kpi-card" style="--accent:var(--orange);cursor:pointer" onclick="kpiDrill('overdue')" title="View overdue calls">
+      <div class="kpi-label">📞 Calls Due</div>
+      <div class="kpi-value" id="kpi-calls">—</div>
+      <div class="kpi-delta">overdue follow-ups ↗</div>
+    </div>
+    <div class="kpi-card" style="--accent:var(--gold);cursor:pointer" onclick="kpiDrill('pipeline')" title="View pipeline leads">
+      <div class="kpi-label">💰 Pipeline ₹</div>
+      <div class="kpi-value" id="kpi-pipe">—</div>
+      <div class="kpi-delta">expected commission ↗</div>
+    </div>
+    <div class="kpi-card" style="--accent:var(--green);cursor:pointer" onclick="kpiDrill('visits')" title="View site visits">
+      <div class="kpi-label">🏠 Site Visits</div>
+      <div class="kpi-value" id="kpi-visits">—</div>
+      <div class="kpi-delta">in negotiation/visit ↗</div>
+    </div>
+    <div class="kpi-card" style="--accent:var(--blue);cursor:pointer" onclick="kpiDrill('closed')" title="View closed deals">
+      <div class="kpi-label">🎯 Conv. Rate</div>
+      <div class="kpi-value" id="kpi-conv">—</div>
+      <div class="kpi-delta">overall ↗</div>
+    </div>
+  </div>
+
+  <div class="cmd-bottom">
+    <div class="section-card">
+      <div class="section-hdr">
+        <span class="section-title">📞 Priority Call List — Do This First</span>
+        <label class="today-toggle"><input type="checkbox" id="today-only" onchange="renderCommand()"> Today only</label>
+        <button class="refresh-btn" onclick="loadLiveData()" title="Refresh">⟳</button>
+      </div>
+      <div id="call-list"><div class="empty">⏳ Loading leads...</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="advisory-card">
+        <div class="advisory-title">🤖 AI Advisory</div>
+        <div id="advisory-content"><div style="color:var(--muted);font-size:13px">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmd-row2">
+    <div class="section-card">
+      <div class="section-hdr"><span class="section-title">📊 Conversion Funnel</span></div>
+      <div style="padding:14px 16px" id="funnel-wrap"></div>
+    </div>
+    <div class="section-card">
+      <div class="section-hdr"><span class="section-title">💎 Source ROI</span></div>
+      <div style="padding:14px 16px" id="source-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LEADS PANEL ══ -->
+<div class="panel" id="panel-leads">
+  <div class="leads-toolbar">
+    <input type="search" class="leads-search" id="leads-search" placeholder="🔍  Search name, phone, area..." oninput="renderLeads()">
+    <select id="flt-status" onchange="renderLeads()">
+      <option value="">All Status</option>
+      <option>Hot</option><option>Active</option><option>Warm</option><option>Cold</option>
+    </select>
+    <select id="flt-stage" onchange="renderLeads()">
+      <option value="">All Stages</option>
+      <option>New Lead</option><option>First Call</option><option>Shortlisted</option>
+      <option>Site Visit</option><option>Negotiation</option><option>Closed</option><option>Lost</option>
+    </select>
+    <select id="flt-loc" onchange="renderLeads()">
+      <option value="">All Areas</option>
+      <option>Bavdhan</option><option>Kharadi</option><option>Baner</option>
+      <option>Hinjewadi</option><option>Mundhwa</option><option>Wadgaon Sheri</option>
+      <option>Yerawada</option><option>Pune Station</option>
+    </select>
+    <input type="date" id="flt-from" onchange="renderLeads()" title="From date">
+    <input type="date" id="flt-to"   onchange="renderLeads()" title="To date">
+    <button class="btn-sm" onclick="clearDateFilter()">✕ Clear dates</button>
+    <button class="btn-sm btn-gold" onclick="openCalc()">🧮 Calc</button>
+    <span id="lead-count" style="font-size:12px;color:var(--muted);white-space:nowrap;margin-left:4px"></span>
+  </div>
+  <div class="leads-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortLeads('name')">Name &amp; Phone</th>
+          <th onclick="sortLeads('loc')">Area · Config</th>
+          <th onclick="sortLeads('bmax')">Budget</th>
+          <th onclick="sortLeads('status')">Status</th>
+          <th onclick="sortLeads('stage')">Stage</th>
+          <th onclick="sortLeads('score')">Score</th>
+          <th onclick="sortLeads('source')">Source</th>
+          <th onclick="sortLeads('dateAdded')">Added</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="leads-tbody"><tr><td colspan="9" class="empty">⏳ Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ SCORE PANEL ══ -->
+<div class="panel" id="panel-score">
+  <div class="score-grid" id="score-grid"><div class="empty">⏳ Loading...</div></div>
+</div>
+
+<!-- ══ PIPELINE PANEL ══ -->
+<div class="panel" id="panel-pipeline">
+  <div style="margin-bottom:12px;font-size:13px;color:var(--muted)">
+    Pipeline commission estimate: <strong id="pipe-comm-total" style="color:var(--gold)">—</strong>
+    &nbsp;·&nbsp; <span style="font-size:12px">Drag cards between columns to update stage</span>
+  </div>
+  <div class="pipe-board" id="pipe-board"></div>
+</div>
+
+<!-- ══ SCRIPTS PANEL ══ -->
+<div class="panel" id="panel-scripts">
+  <div class="scripts-tags" id="scripts-tags"></div>
+  <div id="scripts-list"></div>
+</div>
+
+<!-- ══ INVENTORY PANEL ══ -->
+<div class="panel" id="panel-inventory">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+    <input type="search" id="inv-search" placeholder="🔍  Search project, builder, area..." style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px;font-family:var(--sans)" oninput="renderInventory()">
+    <select id="inv-loc" onchange="renderInventory()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px;font-family:var(--sans)">
+      <option value="">All Areas</option>
+      <option>Bavdhan</option><option>Kharadi</option><option>Baner</option>
+      <option>Hinjewadi</option><option>Mundhwa</option><option>Wadgaon Sheri</option>
+      <option>Yerawada</option><option>Pune Station</option>
+    </select>
+    <select id="inv-cfg" onchange="renderInventory()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px;font-family:var(--sans)">
+      <option value="">All Configs</option>
+      <option>1 BHK</option><option>2 BHK</option><option>2.5 BHK</option><option>3 BHK</option><option>4 BHK</option>
+    </select>
+    <select id="inv-status" onchange="renderInventory()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px;font-family:var(--sans)">
+      <option value="">All Status</option><option>Available</option><option>Low Stock</option><option>Sold Out</option>
+    </select>
+    <span id="inv-count" style="font-size:12px;color:var(--muted)"></span>
+    <button class="btn-sm btn-gold" onclick="openAddProperty()">＋ Add Property</button>
+  </div>
+  <div style="overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)">
+    <table>
+      <thead><tr>
+        <th onclick="sortInv('project')">Project</th>
+        <th onclick="sortInv('builder')">Builder</th>
+        <th onclick="sortInv('loc')">Area</th>
+        <th onclick="sortInv('cfg')">Config</th>
+        <th onclick="sortInv('pmin')">Price Range</th>
+        <th onclick="sortInv('netComm')">Net Comm</th>
+        <th onclick="sortInv('units')">Units</th>
+        <th onclick="sortInv('status')">Status</th>
+        <th>Action</th>
+      </tr></thead>
+      <tbody id="inv-tbody"><tr><td colspan="9" class="empty">⏳ Loading inventory...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ ADD PROPERTY MODAL ══ -->
+<div class="overlay" id="addprop-overlay" onclick="if(event.target===this)closeAddProperty()">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-hdr">
+      <div class="modal-name">🏗 Add New Property</div>
+      <button class="modal-close" onclick="closeAddProperty()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="qa-grid">
+        <div class="qa-field"><label>Project Name *</label><input id="ap-project" placeholder="e.g. Godrej Horizon"></div>
+        <div class="qa-field"><label>Builder *</label><input id="ap-builder" placeholder="e.g. Godrej Properties"></div>
+        <div class="qa-field">
+          <label>Locality *</label>
+          <select id="ap-loc">
+            <option value="">Select locality</option>
+            <option>Bavdhan</option><option>Kharadi</option><option>Baner</option>
+            <option>Hinjewadi</option><option>Mundhwa</option><option>Wadgaon Sheri</option>
+            <option>Yerawada</option><option>Pune Station</option>
+          </select>
+        </div>
+        <div class="qa-field">
+          <label>Config *</label>
+          <select id="ap-cfg">
+            <option value="">Select BHK</option>
+            <option>1 BHK</option><option>2 BHK</option><option>2.5 BHK</option><option>3 BHK</option><option>4 BHK</option>
+          </select>
+        </div>
+        <div class="qa-field"><label>Price Min ₹</label><input id="ap-pmin" type="number" placeholder="e.g. 8500000"></div>
+        <div class="qa-field"><label>Price Max ₹</label><input id="ap-pmax" type="number" placeholder="e.g. 13500000"></div>
+        <div class="qa-field"><label>Units Available</label><input id="ap-units" type="number" placeholder="e.g. 12" value="1"></div>
+        <div class="qa-field">
+          <label>Commission Rate</label>
+          <select id="ap-comm">
+            <option value="0.02">2%</option><option value="0.0175">1.75%</option>
+            <option value="0.015">1.5%</option><option value="0.025">2.5%</option>
+          </select>
+        </div>
+        <div class="qa-field qa-full"><label>Notes</label><input id="ap-notes" placeholder="RERA number, amenities, launch date..."></div>
+      </div>
+      <div id="ap-preview" style="margin-top:12px;padding:12px;background:var(--bg4);border-radius:8px;font-size:13px;display:none"></div>
+      <div id="ap-error" style="margin-top:8px;color:var(--red);font-size:12px;display:none"></div>
+      <button class="btn-sm btn-gold" style="width:100%;margin-top:14px;padding:11px" onclick="submitAddProperty()">✅ Add to Inventory</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REFERRALS PANEL ══ -->
+<div class="panel" id="panel-referrals">
+  <div class="ref-grid">
+    <div class="ref-section">
+      <div class="ref-section-hdr">🏆 Partner Leaderboard</div>
+      <div id="ref-lb"></div>
+    </div>
+    <div class="ref-section">
+      <div class="ref-section-hdr">💰 Log Payment</div>
+      <div class="pay-form">
+        <input id="pay-pid"    placeholder="Partner ID (RP1234)">
+        <input id="pay-amount" type="number" placeholder="Amount ₹">
+        <input id="pay-utr"    placeholder="UTR / Reference number">
+        <button class="btn-sm btn-gold" onclick="markPaid()">✅ Mark Paid</button>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:16px">
+    <div class="ref-section">
+      <div class="ref-section-hdr">📋 Referral Commission Tracker</div>
+      <div id="ref-comm-list"><div class="empty">No referral commissions logged yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LEAD MODAL ══ -->
+<div class="overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-name" id="m-name">—</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px" id="m-meta">—</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-tabs">
+        <button class="m-tab active" onclick="switchMTab('suggest',this)">🏗 Properties</button>
+        <button class="m-tab" onclick="switchMTab('notes',this)">📝 Call Notes</button>
+        <button class="m-tab" onclick="switchMTab('history',this)">📖 History</button>
+        <button class="m-tab" onclick="switchMTab('wa',this)">💬 WhatsApp</button>
+      </div>
+      <div class="m-pane active" id="mpane-suggest"></div>
+      <div class="m-pane" id="mpane-notes">
+        <select class="stage-select" id="m-stage">
+          <option>New Lead</option><option>First Call</option><option>Shortlisted</option>
+          <option>Site Visit</option><option>Negotiation</option><option>Closed</option><option>Lost</option><option>Nurture</option>
+        </select>
+        <textarea class="note-input" id="m-note" placeholder="Call notes, objections, next action..."></textarea>
+        <button class="btn-sm btn-gold" style="margin-top:8px;width:100%" onclick="saveNote()">💾 Save Note + Sync to Sheets</button>
+      </div>
+      <div class="m-pane" id="mpane-history"><div class="empty">No notes yet.</div></div>
+      <div class="m-pane" id="mpane-wa" id="mpane-wa"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ QUICK ADD MODAL ══ -->
+<div class="overlay" id="qa-overlay" onclick="if(event.target===this)closeQA()">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-name">➕ Quick Add Lead</div>
+      <button class="modal-close" onclick="closeQA()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="qa-grid">
+        <div class="qa-field"><label>Name *</label><input id="qa-name" placeholder="Buyer full name"></div>
+        <div class="qa-field"><label>Phone *</label><input id="qa-phone" placeholder="10-digit mobile" maxlength="10" type="tel"></div>
+        <div class="qa-field">
+          <label>Area</label>
+          <select id="qa-loc">
+            <option value="">Select locality</option>
+            <option>Bavdhan</option><option>Kharadi</option><option>Baner</option>
+            <option>Hinjewadi</option><option>Mundhwa</option><option>Wadgaon Sheri</option>
+            <option>Yerawada</option><option>Pune Station</option>
+          </select>
+        </div>
+        <div class="qa-field">
+          <label>Config</label>
+          <select id="qa-cfg">
+            <option value="">Select BHK</option>
+            <option>1 BHK</option><option>2 BHK</option><option>2.5 BHK</option><option>3 BHK</option><option>4 BHK</option>
+          </select>
+        </div>
+        <div class="qa-field"><label>Budget Min ₹</label><input id="qa-bmin" type="number" placeholder="e.g. 8000000"></div>
+        <div class="qa-field"><label>Budget Max ₹</label><input id="qa-bmax" type="number" placeholder="e.g. 15000000"></div>
+        <div class="qa-field">
+          <label>Source</label>
+          <select id="qa-src">
+            <option>Walk-in</option><option>Phone Call</option><option>Referral</option>
+            <option>MagicBricks</option><option>99Acres</option><option>Housing.com</option>
+            <option>Instagram</option><option>Google Ads</option><option>WhatsApp</option>
+          </select>
+        </div>
+        <div class="qa-field qa-full"><label>Quick Note</label><input id="qa-note" placeholder="Urgency, specific requirement, etc."></div>
+      </div>
+      <button class="btn-sm btn-gold" style="width:100%;margin-top:14px;padding:11px" onclick="submitQA()">✅ Add Lead → Open Modal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COMMISSION CALC MODAL ══ -->
+<div class="overlay" id="calc-overlay" onclick="if(event.target===this)closeCalc()">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr">
+      <div class="modal-name">🧮 Commission Calculator</div>
+      <button class="modal-close" onclick="closeCalc()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="qa-grid" style="margin-bottom:16px">
+        <div class="qa-field"><label>Sale Price ₹</label><input id="calc-price" type="number" placeholder="e.g. 12500000" oninput="runCalc()"></div>
+        <div class="qa-field">
+          <label>Commission Rate</label>
+          <select id="calc-rate" onchange="runCalc()">
+            <option value="0.02">2%</option><option value="0.0175">1.75%</option>
+            <option value="0.015">1.5%</option><option value="0.025">2.5%</option>
+          </select>
+        </div>
+        <div class="qa-field qa-full">
+          <label>Partner Config</label>
+          <select id="calc-partner" onchange="runCalc()">
+            <option value="0">No referral partner</option>
+            <option value="25000">1 BHK — ₹25,000</option>
+            <option value="40000">2 BHK — ₹40,000</option>
+            <option value="50000">2.5 BHK — ₹50,000</option>
+            <option value="60000">3 BHK — ₹60,000</option>
+            <option value="80000">4 BHK — ₹80,000</option>
+          </select>
+        </div>
+      </div>
+      <div id="calc-result"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ KB HINT ══ -->
+<div class="kb-hint" id="kb-hint">
+  <div class="kb-hint-title">Keyboard Shortcuts</div>
+  <div class="kb-row"><span>New lead</span><kbd>N</kbd></div>
+  <div class="kb-row"><span>Search leads</span><kbd>F</kbd></div>
+  <div class="kb-row"><span>Calculator</span><kbd>C</kbd></div>
+  <div class="kb-row"><span>Tab 1–6</span><kbd>1</kbd>–<kbd>6</kbd></div>
+  <div class="kb-row"><span>Close modal</span><kbd>Esc</kbd></div>
+  <div class="kb-row"><span>This hint</span><kbd>?</kbd></div>
+</div>
+
+
+<!-- ══ INVENTORY PANEL ══ -->
+<div class="panel" id="panel-inventory">
+  <div class="leads-toolbar">
+    <input type="search" id="inv-search" class="leads-search" placeholder="🔍  Search project, builder, area..." oninput="renderInventory()">
+    <select id="inv-flt-loc" onchange="renderInventory()">
+      <option value="">All Areas</option>
+      <option>Bavdhan</option><option>Kharadi</option><option>Baner</option>
+      <option>Hinjewadi</option><option>Mundhwa</option><option>Wadgaon Sheri</option>
+      <option>Yerawada</option><option>Pune Station</option>
+    </select>
+    <select id="inv-flt-cfg" onchange="renderInventory()">
+      <option value="">All Configs</option>
+      <option>1 BHK</option><option>2 BHK</option><option>2.5 BHK</option><option>3 BHK</option><option>4 BHK</option>
+    </select>
+    <select id="inv-flt-status" onchange="renderInventory()">
+      <option value="">All Status</option>
+      <option>Active</option><option>Sold Out</option><option>Coming Soon</option>
+    </select>
+    <button class="btn-sm btn-gold" onclick="openInvModal(null)">＋ Add Property</button>
+    <span id="inv-count" style="font-size:12px;color:var(--muted)"></span>
+  </div>
+  <div class="leads-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortInv('project')">Project</th>
+          <th onclick="sortInv('builder')">Builder</th>
+          <th onclick="sortInv('loc')">Area</th>
+          <th onclick="sortInv('cfg')">Config</th>
+          <th onclick="sortInv('pmin')">Price Range</th>
+          <th onclick="sortInv('partnerComm')">Partner ₹</th>
+          <th onclick="sortInv('netComm')">Net ₹</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="inv-tbody"><tr><td colspan="9" class="empty">⏳ Loading inventory...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ INVENTORY ADD/EDIT MODAL ══ -->
+<div class="overlay" id="inv-overlay" onclick="if(event.target===this)closeInvModal()">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-hdr">
+      <div class="modal-name" id="inv-modal-title">＋ Add Property</div>
+      <button class="modal-close" onclick="closeInvModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="inv-edit-row">
+      <div class="qa-grid">
+        <div class="qa-field"><label>Project Name *</label><input id="inv-project" placeholder="e.g. VTP Bellissimo"></div>
+        <div class="qa-field"><label>Builder *</label><input id="inv-builder" placeholder="e.g. VTP Realty"></div>
+        <div class="qa-field">
+          <label>Locality *</label>
+          <select id="inv-loc">
+            <option value="">Select area</option>
+            <option>Bavdhan</option><option>Kharadi</option><option>Baner</option>
+            <option>Hinjewadi</option><option>Mundhwa</option><option>Wadgaon Sheri</option>
+            <option>Yerawada</option><option>Pune Station</option>
+          </select>
+        </div>
+        <div class="qa-field">
+          <label>Config *</label>
+          <select id="inv-cfg">
+            <option value="">Select BHK</option>
+            <option>1 BHK</option><option>2 BHK</option><option>2.5 BHK</option><option>3 BHK</option><option>4 BHK</option>
+          </select>
+        </div>
+        <div class="qa-field"><label>Price Min ₹</label><input id="inv-pmin" type="number" placeholder="8500000"></div>
+        <div class="qa-field"><label>Price Max ₹</label><input id="inv-pmax" type="number" placeholder="13000000"></div>
+        <div class="qa-field"><label>Units Available</label><input id="inv-units" type="number" placeholder="12"></div>
+        <div class="qa-field"><label>Possession</label><input id="inv-possession" placeholder="Ready / Dec 2025"></div>
+        <div class="qa-field"><label>Partner Comm ₹</label><input id="inv-pcomm" type="number" placeholder="40000"></div>
+        <div class="qa-field"><label>Net Comm ₹</label><input id="inv-ncomm" type="number" placeholder="210000"></div>
+        <div class="qa-field"><label>RERA No.</label><input id="inv-rera" placeholder="P52100012345"></div>
+        <div class="qa-field">
+          <label>Status</label>
+          <select id="inv-status">
+            <option>Active</option><option>Sold Out</option><option>Coming Soon</option>
+          </select>
+        </div>
+        <div class="qa-field qa-full"><label>Amenities</label><input id="inv-amenities" placeholder="Club house, pool, gym..."></div>
+        <div class="qa-field qa-full"><label>Notes</label><input id="inv-notes" placeholder="Any special notes..."></div>
+      </div>
+      <button class="btn-sm btn-gold" style="width:100%;margin-top:14px;padding:11px" onclick="saveInvItem()">💾 Save Property</button>
+      <div id="inv-save-status" style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FAB ══ -->
+<button class="fab" id="fab" onclick="openQA()" title="Add Lead (N)">+</button>
+
+<script>
+// ════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════
+const GAS_URL     = 'https://script.google.com/macros/s/AKfycbxL-KrU7CJis-TEKF1Jf5gzb0TrtGXtRk9Qak1fLSgZ69xFDEioLMaRAfzeS5v73PNLZg/exec';
+const GAS_API_KEY = 'NGR_2026_SECURE'; // Must match CONFIG.API_KEY in Apps Script v5
+const API_KEY = 'NG2026PUNE'; // must match CONFIG.API_KEY in Apps Script
+
+// ════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════
+let LEADS = [];
+let currentLead = null;
+let discussionHistory = {};
+let sortKey = 'score', sortDir = -1;
+let activeScriptTag = 'all';
+
+// ════════════════════════════════════════════════════════
+// INVENTORY (28 properties from Google Sheets data)
+// ════════════════════════════════════════════════════════
+const INVENTORY = [
+  {project:'Godrej Horizon',      builder:'Godrej Properties', loc:'Bavdhan',       cfg:'2 BHK',   pmin:8200000,  pmax:12000000, comm:0.02, partnerComm:40000},
+  {project:'Godrej Horizon',      builder:'Godrej Properties', loc:'Bavdhan',       cfg:'3 BHK',   pmin:13500000, pmax:19000000, comm:0.02, partnerComm:60000},
+  {project:'Rohan Nidita',        builder:'Rohan Builders',    loc:'Bavdhan',       cfg:'2 BHK',   pmin:7800000,  pmax:11500000, comm:0.02, partnerComm:40000},
+  {project:'Kolte Patil Life Republic',builder:'Kolte Patil',  loc:'Hinjewadi',     cfg:'1 BHK',   pmin:4800000,  pmax:7200000,  comm:0.02, partnerComm:25000},
+  {project:'Kolte Patil Life Republic',builder:'Kolte Patil',  loc:'Hinjewadi',     cfg:'2 BHK',   pmin:7200000,  pmax:11000000, comm:0.02, partnerComm:40000},
+  {project:'Paranjape Aspire',    builder:'Paranjape Schemes', loc:'Hinjewadi',     cfg:'2 BHK',   pmin:7500000,  pmax:10500000, comm:0.02, partnerComm:40000},
+  {project:'VTP Bellissimo',      builder:'VTP Realty',        loc:'Kharadi',       cfg:'2 BHK',   pmin:8800000,  pmax:13000000, comm:0.02, partnerComm:40000},
+  {project:'VTP Bellissimo',      builder:'VTP Realty',        loc:'Kharadi',       cfg:'3 BHK',   pmin:12000000, pmax:19000000, comm:0.02, partnerComm:60000},
+  {project:'Nyati Elan',          builder:'Nyati Group',       loc:'Kharadi',       cfg:'2 BHK',   pmin:8500000,  pmax:12500000, comm:0.02, partnerComm:40000},
+  {project:'Magarpatta Roost',    builder:'Magarpatta Corp',   loc:'Mundhwa',       cfg:'2 BHK',   pmin:8200000,  pmax:12000000, comm:0.02, partnerComm:40000},
+  {project:'Magarpatta Roost',    builder:'Magarpatta Corp',   loc:'Mundhwa',       cfg:'3 BHK',   pmin:13000000, pmax:19500000, comm:0.02, partnerComm:60000},
+  {project:'Gera World at Kharadi',builder:'Gera Developments',loc:'Kharadi',       cfg:'2 BHK',   pmin:9000000,  pmax:13500000, comm:0.02, partnerComm:40000},
+  {project:'Gera World at Kharadi',builder:'Gera Developments',loc:'Kharadi',       cfg:'3 BHK',   pmin:12500000, pmax:20000000, comm:0.02, partnerComm:60000},
+  {project:'Kumar Prospera',      builder:'Kumar Properties',  loc:'Wadgaon Sheri', cfg:'2 BHK',   pmin:7500000,  pmax:11000000, comm:0.02, partnerComm:40000},
+  {project:'Kumar Prospera',      builder:'Kumar Properties',  loc:'Wadgaon Sheri', cfg:'3 BHK',   pmin:11500000, pmax:18000000, comm:0.02, partnerComm:60000},
+  {project:'Rohan Madhuban',      builder:'Rohan Builders',    loc:'Wadgaon Sheri', cfg:'2 BHK',   pmin:7200000,  pmax:10800000, comm:0.02, partnerComm:40000},
+  {project:'Panchshil Eon Homes', builder:'Panchshil Realty',  loc:'Kharadi',       cfg:'2.5 BHK', pmin:10500000, pmax:15000000, comm:0.02, partnerComm:50000},
+  {project:'Panchshil Eon Homes', builder:'Panchshil Realty',  loc:'Kharadi',       cfg:'3 BHK',   pmin:14000000, pmax:22000000, comm:0.02, partnerComm:60000},
+  {project:'Solaris One',         builder:'Gera Developments', loc:'Yerawada',      cfg:'2 BHK',   pmin:8000000,  pmax:12500000, comm:0.02, partnerComm:40000},
+  {project:'Solaris One',         builder:'Gera Developments', loc:'Yerawada',      cfg:'3 BHK',   pmin:11500000, pmax:17000000, comm:0.02, partnerComm:60000},
+  {project:'Baner Greens',        builder:'Paranjape Schemes', loc:'Baner',         cfg:'2 BHK',   pmin:9200000,  pmax:14000000, comm:0.02, partnerComm:40000},
+  {project:'Baner Greens',        builder:'Paranjape Schemes', loc:'Baner',         cfg:'3 BHK',   pmin:14500000, pmax:22000000, comm:0.02, partnerComm:60000},
+  {project:'Kolte Patil Western Avenue',builder:'Kolte Patil', loc:'Baner',         cfg:'2 BHK',   pmin:9000000,  pmax:13500000, comm:0.02, partnerComm:40000},
+  {project:'Kolte Patil Western Avenue',builder:'Kolte Patil', loc:'Baner',         cfg:'3 BHK',   pmin:14000000, pmax:21000000, comm:0.02, partnerComm:60000},
+  {project:'Stellar One',         builder:'VTP Realty',        loc:'Pune Station',  cfg:'2 BHK',   pmin:9500000,  pmax:13500000, comm:0.02, partnerComm:40000},
+  {project:'Stellar One',         builder:'VTP Realty',        loc:'Pune Station',  cfg:'3 BHK',   pmin:14500000, pmax:20000000, comm:0.02, partnerComm:60000},
+  {project:'Nyati Enclave',       builder:'Nyati Group',       loc:'Mundhwa',       cfg:'3 BHK',   pmin:13500000, pmax:21000000, comm:0.02, partnerComm:60000},
+  {project:'Kumar Pinnacle',      builder:'Kumar Properties',  loc:'Bavdhan',       cfg:'3 BHK',   pmin:14000000, pmax:22000000, comm:0.02, partnerComm:60000},
+];
+
+// ════════════════════════════════════════════════════════
+// SCRIPTS DATA
+// ════════════════════════════════════════════════════════
+const SCRIPTS = [
+  {id:'s1', tag:'new', title:'New Lead — Day 0', text:`Hi {Name}! 👋
+
+Thanks for reaching out to NextGen Realtors.
+
+I've noted your requirement for a {Config} in {Locality} within ₹{Budget}.
+
+I have {X} excellent options matching your criteria. Can we connect on a quick 10-minute call today?
+
+– Rushabh | NextGen Realtors, Pune
+📞 +91 94040 06336`},
+  {id:'s2', tag:'followup', title:'Follow-Up — Day 2', text:`Hi {Name}!
+
+Just checking in on your property search. 
+
+I have a few new listings in {Locality} that fit your budget perfectly. One of them is a ready-to-move {Config} — it won't last long at this price.
+
+Available for a site visit this weekend? Takes just 45 minutes.
+
+– Rushabh | NextGen Realtors`},
+  {id:'s3', tag:'visit', title:'Site Visit Confirmation', text:`Hi {Name}! ✅
+
+Your site visit is confirmed for {Date} at {Time}.
+
+📍 Meeting point: {Project}, {Locality}
+
+Please carry:
+• Valid ID (Aadhar/PAN)
+• Any questions written down
+
+I'll be there to walk you through everything. See you soon!
+
+– Rushabh | NextGen Realtors`},
+  {id:'s4', tag:'negotiation', title:'Negotiation — Price Justification', text:`Hi {Name},
+
+I understand your concern about the price. Let me share some context:
+
+• {Locality} has seen 12–18% appreciation in the last 2 years
+• This {Config} at ₹{Price} is ₹{X}/sqft — market is ₹{Market}/sqft
+• Builder is offering a payment plan: 20:80 or 10:90
+• Limited units remaining in this configuration
+
+The builder has limited flexibility but I can negotiate the floor rise charges and parking cost.
+
+Shall I request a final best price for you?
+
+– Rushabh`},
+  {id:'s5', tag:'referral', title:'Referral Partner Invite', text:`Hi {Name}! 
+
+Hope you're doing well. I wanted to share an exciting opportunity with you.
+
+If you refer someone looking to buy a home in Pune, you earn:
+🏠 1 BHK → ₹25,000
+🏠 2 BHK → ₹40,000  
+🏠 3 BHK → ₹60,000
+🏠 4 BHK → ₹80,000
+
+No targets, no commitment — just refer and earn when they book.
+
+Interested? I'll register you as a partner today.
+
+– Rushabh | NextGen Realtors`},
+  {id:'s6', tag:'cold', title:'Cold Lead Re-Engagement', text:`Hi {Name}! 
+
+It's been a while since we spoke about your {Config} search in {Locality}.
+
+Property prices in Pune have moved — and a few new projects launched recently that I think you'll really like.
+
+Are you still open to exploring? No pressure at all — just wanted to keep you updated.
+
+– Rushabh | NextGen Realtors`},
+  {id:'s7', tag:'visit', title:'Post Visit Follow-Up', text:`Hi {Name}! 
+
+It was great showing you {Project} today! 
+
+What were your initial thoughts? 
+
+I can arrange a second visit with your family / CA if needed. The unit we saw (Floor {X}, {View} facing) is available — I'd suggest reserving it with a token before the weekend.
+
+Want me to share the payment plan and all-in cost breakdown?
+
+– Rushabh`},
+];
+
+// ════════════════════════════════════════════════════════
+// UTILITIES
+// ════════════════════════════════════════════════════════
+function fmtL(n) {
+  if (!n) return '0';
+  if (n >= 10000000) return (n/10000000).toFixed(1) + 'Cr';
+  return Math.round(n/100000) + 'L';
+}
+function fmtBudget(mn, mx) {
+  if (!mx) return '—';
+  return '₹' + fmtL(mn) + '–' + fmtL(mx);
+}
+function fmtINR(n) {
+  return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+function statusPill(s) {
+  const map = {Hot:'pill-hot', Active:'pill-active', Warm:'pill-warm', Cold:'pill-cold', Closed:'pill-closed'};
+  return `<span class="status-pill ${map[s]||'pill-cold'}">${s||'—'}</span>`;
+}
+function scoreColor(s) {
+  return s >= 70 ? 'var(--red)' : s >= 50 ? 'var(--orange)' : s >= 35 ? 'var(--gold)' : 'var(--blue)';
+}
+function scoreRing(score) {
+  const c = scoreColor(score);
+  const pct = Math.round((score/100)*56.5);
+  return `<span class="score-ring">
+    <svg width="32" height="32" viewBox="0 0 32 32">
+      <circle cx="16" cy="16" r="9" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="3"/>
+      <circle cx="16" cy="16" r="9" fill="none" stroke="${c}" stroke-width="3"
+        stroke-dasharray="${pct} 56.5" stroke-dashoffset="14" stroke-linecap="round"/>
+    </svg>${score}</span>`;
+}
+function srcBadge(s) {
+  return `<span class="src-badge">${s||'—'}</span>`;
+}
+function toast(msg, dur=2500) {
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), dur);
+}
+function copy(text) {
+  navigator.clipboard.writeText(text).then(() => toast('✅ Copied!')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); toast('✅ Copied!');
+  });
+}
+function getHour() { return new Date().getHours(); }
+
+// ════════════════════════════════════════════════════════
+// LIVE DATA
+// ════════════════════════════════════════════════════════
+function processLeads(raw) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  return raw.map(l => {
+    let dueOffset = 999, daysAgo = 0;
+    if (l.nextFollowUp) {
+      try { const d = new Date(l.nextFollowUp); d.setHours(0,0,0,0); dueOffset = Math.round((d-today)/86400000); } catch(e){}
+    }
+    if (l.dateAdded) {
+      try { const d = new Date(l.dateAdded); d.setHours(0,0,0,0); daysAgo = Math.round((today-d)/86400000); } catch(e){}
+    }
+    return {
+      id: l.id||'', name: l.name||'', phone: l.phone||'', email: l.email||'',
+      loc: l.loc||'', cfg: l.cfg||'',
+      bmin: parseFloat(l.bmin)||0, bmax: parseFloat(l.bmax)||0,
+      urgency: parseFloat(l.urgency)||3, purpose: l.purpose||'Self',
+      funding: l.funding||'', timeline: l.timeline||'',
+      source: l.source||'', status: l.status||'Active',
+      stage: l.stage||'New Lead', score: parseFloat(l.score)||0,
+      notes: l.notes||'', dateAdded: l.dateAdded||'',
+      nextFollowUp: l.nextFollowUp||'',
+      refId: l.refId||'', refStatus: l.refStatus||'',
+      dueOffset, daysAgo,
+    };
+  });
+}
+
+function setBanner(msg, type) {
+  const b = document.getElementById('banner');
+  b.textContent = msg; b.className = 'banner ' + (type||'');
+  const dot = document.getElementById('live-dot');
+  const lbl = document.getElementById('live-label');
+  if (type === 'live') {
+    dot.style.background = 'var(--green)';
+    lbl.textContent = 'LIVE';
+  } else if (type === 'error') {
+    dot.style.background = 'var(--red)';
+    lbl.textContent = 'Error';
+  } else {
+    dot.style.background = 'var(--muted)';
+    lbl.textContent = 'Connecting...';
+  }
+}
+
+function loadLiveData() {
+  setBanner('◌ Connecting to Google Sheets...', '');
+
+  // Strategy: try fetch() first (works from Apps Script hosting natively),
+  // fall back to JSONP if fetch fails
+  fetch(GAS_URL + '?action=get_leads&key=' + API_KEY + '&t=' + Date.now())
+    .then(r => r.text())
+    .then(text => {
+      // Strip JSONP wrapper if present: callback({...})
+      const clean = text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
+      const json = JSON.parse(clean);
+      if (json && json.leads) {
+        LEADS = processLeads(json.leads);
+        const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+        setBanner('● LIVE · ' + LEADS.length + ' leads · Updated ' + now, 'live');
+        renderAll();
+      } else {
+        setBanner('⚠ Connected but no leads found yet. Add leads via landing page.', '');
+        renderAll();
+      }
+    })
+    .catch(() => {
+      // Fallback: JSONP via script tag
+      const cb = 'ngcb' + Date.now();
+      const s = document.createElement('script');
+      window[cb] = function(json) {
+        delete window[cb];
+        try { document.head.removeChild(s); } catch(e){}
+        if (json && json.leads) {
+          LEADS = processLeads(json.leads);
+          const now = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+          setBanner('● LIVE · ' + LEADS.length + ' leads · Updated ' + now, 'live');
+          renderAll();
+        }
+      };
+      s.onerror = function() {
+        delete window[cb];
+        try { document.head.removeChild(s); } catch(e){}
+        setBanner('❌ Cannot reach Google Sheets. Check Apps Script deployment.', 'error');
+        document.getElementById('call-list').innerHTML =
+          '<div class="empty" style="color:var(--red)">❌ Connection failed.<br><br>Make sure your Apps Script is deployed as <strong>Anyone</strong>.<br><br><a href="https://script.google.com" target="_blank" style="color:var(--gold)">Open Apps Script →</a></div>';
+      };
+      s.src = GAS_URL + '?action=get_leads&key=' + API_KEY + '&callback=' + cb;
+      document.head.appendChild(s);
+    });
+}
+
+// ════════════════════════════════════════════════════════
+// MATCH ENGINE
+// ════════════════════════════════════════════════════════
+function findMatches(lead) {
+  // Nearby area groupings for Pune
+  const NEARBY = {
+    'Pune Station': ['Pune Station','Yerawada','Kharadi'],
+    'Kharadi':      ['Kharadi','Pune Station','Mundhwa'],
+    'Mundhwa':      ['Mundhwa','Kharadi','Wadgaon Sheri'],
+    'Bavdhan':      ['Bavdhan','Baner'],
+    'Baner':        ['Baner','Bavdhan','Hinjewadi'],
+    'Hinjewadi':    ['Hinjewadi','Baner','Bavdhan'],
+    'Wadgaon Sheri':['Wadgaon Sheri','Kharadi','Mundhwa'],
+    'Yerawada':     ['Yerawada','Pune Station','Kharadi'],
+  };
+  const nearby = (NEARBY[lead.loc] || [lead.loc]).map(s => s.toLowerCase());
+
+  return INVENTORY.map(p => {
+    const pLoc = p.loc.toLowerCase();
+    const lLoc = (lead.loc||'').toLowerCase();
+    const exactLoc = pLoc === lLoc;
+    const nearbyLoc = nearby.includes(pLoc);
+
+    // Budget fit: overlap between lead range and property range
+    const budgetOverlap = lead.bmax >= p.pmin * 0.9 && lead.bmin <= p.pmax * 1.1;
+    const cfgMatch = p.cfg.toLowerCase() === (lead.cfg||'').toLowerCase();
+
+    let score = 0;
+    if (exactLoc)    score += 40;
+    else if (nearbyLoc) score += 20;
+    // else 0 — don't show far-away properties at all
+
+    if (budgetOverlap) score += 35;
+    if (cfgMatch) score += 25;
+
+    // Urgency multiplier
+    score = Math.round(score * Math.max(1, (lead.urgency||3)) / 5);
+
+    const budgetFit = lead.bmax >= p.pmin && lead.bmin <= p.pmax
+      ? '✅ Within budget'
+      : lead.bmax >= p.pmin * 0.85
+      ? '⚠ Slight stretch'
+      : '❌ Over budget';
+
+    return {...p, matchScore: score, budgetOk: budgetOverlap, exactLoc, budgetFit};
+  })
+  .filter(p => p.matchScore > 20 && p.budgetOk) // must be nearby AND budget fits
+  .sort((a,b) => {
+    // Exact location first, then by score
+    if (a.exactLoc !== b.exactLoc) return a.exactLoc ? -1 : 1;
+    return b.matchScore - a.matchScore;
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — COMMAND
+// ════════════════════════════════════════════════════════
+function renderCommand() {
+  // Greeting
+  const h = getHour();
+  document.getElementById('greeting-word').textContent =
+    h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+
+  const hot    = LEADS.filter(l => l.status === 'Hot');
+  const overdue= LEADS.filter(l => l.dueOffset < 0 && l.stage !== 'Closed' && l.stage !== 'Lost');
+  const visits = LEADS.filter(l => ['Site Visit','Negotiation'].includes(l.stage));
+  const closed = LEADS.filter(l => l.stage === 'Closed');
+  const pipeComm = visits.reduce((s,l) => s + l.bmax * 0.02 * 0.35, 0);
+  const conv   = LEADS.length ? Math.round((closed.length / LEADS.length) * 100) : 0;
+
+  document.getElementById('kpi-hot').textContent    = hot.length || '0';
+  document.getElementById('kpi-calls').textContent  = overdue.length || '0';
+  document.getElementById('kpi-pipe').textContent   = fmtL(pipeComm);
+  document.getElementById('kpi-visits').textContent = visits.length || '0';
+  document.getElementById('kpi-conv').textContent   = conv + '%';
+
+  // Priority content
+  const priorityEl = document.getElementById('priority-content');
+  if (hot.length > 0) {
+    const top = hot.sort((a,b) => b.score - a.score)[0];
+    priorityEl.innerHTML = `<div class="priority-item">🔥 Call <strong>${top.name.split(' ')[0]}</strong> first — score ${top.score}/100</div>
+      <div class="priority-item" style="color:var(--muted);font-size:12px">${top.cfg} in ${top.loc} · ${fmtBudget(top.bmin,top.bmax)}</div>
+      ${hot.length > 1 ? `<div class="priority-item" style="margin-top:8px;color:var(--muted);font-size:12px">${hot.length - 1} more hot lead${hot.length>2?'s':''} after this</div>` : ''}`;
+  } else if (overdue.length > 0) {
+    priorityEl.innerHTML = `<div class="priority-item">⚠️ ${overdue.length} follow-up${overdue.length>1?'s':''} overdue</div>
+      <div class="priority-item" style="color:var(--muted);font-size:12px">No hot leads — work the overdue list</div>`;
+  } else {
+    priorityEl.innerHTML = `<div class="priority-item" style="color:var(--muted)">✅ All caught up! Add new leads via landing page.</div>`;
+  }
+
+  // Call list
+  const todayOnly = document.getElementById('today-only').checked;
+  let callLeads = LEADS
+    .filter(l => l.stage !== 'Closed' && l.stage !== 'Lost')
+    .filter(l => !todayOnly || l.status === 'Hot' || l.dueOffset <= 0)
+    .sort((a,b) => {
+      if (a.dueOffset !== b.dueOffset) return a.dueOffset - b.dueOffset;
+      return b.score - a.score;
+    })
+    .slice(0, 15);
+
+  if (callLeads.length === 0) {
+    document.getElementById('call-list').innerHTML = '<div class="empty">✅ No calls due' + (todayOnly ? ' today' : '') + '</div>';
+  } else {
+    document.getElementById('call-list').innerHTML = callLeads.map(l => {
+      const cls = l.dueOffset < 0 ? 'overdue' : l.dueOffset === 0 ? 'due-today' : 'follow-ok';
+      const dueTxt = l.dueOffset < 0
+        ? `<span class="call-due due-overdue">${Math.abs(l.dueOffset)}d OVERDUE</span>`
+        : l.dueOffset === 0
+        ? `<span class="call-due due-today">DUE TODAY</span>`
+        : `<span class="call-due due-ok">in ${l.dueOffset}d</span>`;
+      return `<div class="call-item ${cls}" onclick="openModal('${l.id}')">
+        <div>
+          <div class="call-name">${l.name}</div>
+          <div class="call-meta">${l.cfg} · ${l.loc} · ${fmtBudget(l.bmin,l.bmax)} ${srcBadge(l.source)}</div>
+        </div>
+        <div style="text-align:right">${dueTxt}<br>${statusPill(l.status)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Advisory
+  const advEl = document.getElementById('advisory-content');
+  const advItems = [];
+  if (hot.length >= 3) advItems.push(`You have ${hot.length} hot leads. Prioritise calls before noon — conversion drops 40% after 4pm.`);
+  if (overdue.length > 0) advItems.push(`${overdue.length} follow-up${overdue.length>1?'s':''} are overdue. Call before sending WhatsApp — voice converts 3× better.`);
+  const negotiating = LEADS.filter(l => l.stage === 'Negotiation');
+  if (negotiating.length > 0) advItems.push(`${negotiating.length} lead${negotiating.length>1?'s':''} in negotiation. Send payment plan + site photos to build urgency.`);
+  if (visits.length === 0 && LEADS.length > 5) advItems.push(`No site visits scheduled. Call your top 3 warm leads and offer a weekend slot.`);
+  if (advItems.length === 0) advItems.push('All systems clear. Great day to add new leads via the landing page.');
+  advEl.innerHTML = advItems.map(a => `<div class="advisory-item">${a}</div>`).join('');
+
+  renderCommandFunnelAndSource();
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — LEADS TABLE
+// ════════════════════════════════════════════════════════
+function renderLeads() {
+  const q    = (document.getElementById('leads-search').value||'').toLowerCase();
+  const fSt  = document.getElementById('flt-status').value;
+  const fStg = document.getElementById('flt-stage').value;
+  const fLoc = document.getElementById('flt-loc').value;
+  const fFrom= document.getElementById('flt-from').value;
+  const fTo  = document.getElementById('flt-to').value;
+
+  // Update sort header arrows
+  document.querySelectorAll('th').forEach(th => th.classList.remove('asc','desc'));
+  const thMap = {name:0,loc:1,bmax:2,status:3,stage:4,score:5,source:6,dateAdded:7};
+  const headers = document.querySelectorAll('th');
+  if (thMap[sortKey] !== undefined && headers[thMap[sortKey]]) {
+    headers[thMap[sortKey]].classList.add(sortDir === 1 ? 'asc' : 'desc');
+  }
+
+  const stageOrder = {
+    'New Lead':0,'First Call':1,'Shortlisted':2,'Site Visit':3,
+    'Negotiation':4,'Closed':5,'Lost':6,'Nurture':7
+  };
+
+  // Apply KPI drill-down filter if set
+  if (window._kpiFilter) {
+    const kf = window._kpiFilter;
+    window._kpiFilter = null; // consume it
+    let data = LEADS.filter(kf).sort((a,b) => b.score - a.score);
+    document.getElementById('lead-count').textContent = data.length + ' leads';
+    if (data.length === 0) {
+      document.getElementById('leads-tbody').innerHTML = '<tr><td colspan="9" class="empty">No leads in this category</td></tr>';
+    } else {
+      document.getElementById('leads-tbody').innerHTML = data.map(l => `
+        <tr onclick="openModal('${l.id}')" style="cursor:pointer">
+          <td>
+            <div style="font-weight:600;font-size:14px">${l.name}</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--muted)">${l.phone||'—'}</div>
+          </td>
+          <td>
+            <div>${l.loc||'—'}</div>
+            <div style="color:var(--gold);font-size:11px;font-weight:600">${l.cfg||'—'}</div>
+          </td>
+          <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${fmtBudget(l.bmin,l.bmax)}</td>
+          <td>${statusPill(l.status)}</td>
+          <td style="font-size:12px;color:var(--muted)">${l.stage}</td>
+          <td>${scoreRing(l.score)}</td>
+          <td>${srcBadge(l.source)}</td>
+          <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${l.dateAdded||'—'}</td>
+          <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        <button class="wa-btn" onclick="quickWA('${l.id}')" title="Open WhatsApp" style="margin-right:4px">💬</button>
+        <button class="btn-sm" style="padding:4px 8px;font-size:11px" onclick="quickLogCall('${l.id}')" title="Log call">📞</button>
+      </td>
+        </tr>`).join('');
+    }
+    return;
+  }
+
+  let data = LEADS.filter(l => {
+    if (q && !l.name.toLowerCase().includes(q) && !l.phone.includes(q) &&
+        !(l.loc||'').toLowerCase().includes(q) && !(l.cfg||'').toLowerCase().includes(q)) return false;
+    if (fSt  && l.status !== fSt)  return false;
+    if (fStg && l.stage  !== fStg) return false;
+    if (fLoc && l.loc    !== fLoc) return false;
+    if (fFrom) {
+      const d = new Date(l.dateAdded); const from = new Date(fFrom);
+      if (d < from) return false;
+    }
+    if (fTo) {
+      const d = new Date(l.dateAdded); const to = new Date(fTo); to.setHours(23,59,59);
+      if (d > to) return false;
+    }
+    return true;
+  }).sort((a,b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (sortKey === 'stage') { av = stageOrder[av]||0; bv = stageOrder[bv]||0; }
+    if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+    return sortDir * ((bv||0) - (av||0));
+  });
+
+  document.getElementById('lead-count').textContent = data.length + ' leads';
+
+  if (data.length === 0) {
+    document.getElementById('leads-tbody').innerHTML = `<tr><td colspan="9" class="empty">No leads match your filters</td></tr>`;
+    return;
+  }
+
+  document.getElementById('leads-tbody').innerHTML = data.map(l => `
+    <tr onclick="openModal('${l.id}')" style="cursor:pointer">
+      <td>
+        <div style="font-weight:600;font-size:14px">${l.name}</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--muted)">${l.phone||'—'}</div>
+      </td>
+      <td>
+        <div>${l.loc||'—'}</div>
+        <div style="color:var(--gold);font-size:11px;font-weight:600">${l.cfg||'—'}</div>
+      </td>
+      <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${fmtBudget(l.bmin,l.bmax)}</td>
+      <td>${statusPill(l.status)}</td>
+      <td style="font-size:12px;color:var(--muted)">${l.stage}</td>
+      <td>${scoreRing(l.score)}</td>
+      <td>${srcBadge(l.source)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${l.dateAdded||'—'}</td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        <button class="wa-btn" onclick="quickWA('${l.id}')" title="Open WhatsApp" style="margin-right:4px">💬</button>
+        <button class="btn-sm" style="padding:4px 8px;font-size:11px" onclick="quickLogCall('${l.id}')" title="Log call">📞</button>
+      </td>
+    </tr>`).join('');
+}
+
+function sortLeads(key) {
+  if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = -1; }
+  renderLeads();
+}
+
+function clearDateFilter() {
+  document.getElementById('flt-from').value = '';
+  document.getElementById('flt-to').value   = '';
+  renderLeads();
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — SCORE
+// ════════════════════════════════════════════════════════
+function renderScore() {
+  const sorted = [...LEADS].sort((a,b) => b.score - a.score);
+  if (sorted.length === 0) {
+    document.getElementById('score-grid').innerHTML = '<div class="empty">No leads loaded</div>';
+    return;
+  }
+  document.getElementById('score-grid').innerHTML = sorted.map(l => {
+    const c = scoreColor(l.score);
+    return `<div class="score-card" style="--card-accent:${c}" onclick="openModal('${l.id}')">
+      <div class="score-name">${l.name}</div>
+      <div class="score-meta">${l.cfg} · ${l.loc} · ${fmtBudget(l.bmin,l.bmax)}</div>
+      <div class="score-bar-wrap"><div class="score-bar" style="width:${l.score}%;background:${c}"></div></div>
+      <div class="score-nums"><span>${statusPill(l.status)}</span><span style="color:${c};font-weight:700">${l.score}/100</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — PIPELINE
+// ════════════════════════════════════════════════════════
+function renderPipeline() {
+  const stages = ['New Lead','First Call','Shortlisted','Site Visit','Negotiation'];
+  const colors = [
+    {bg:'var(--blue-dim)',  txt:'var(--blue)'},
+    {bg:'var(--gold-dim)',  txt:'var(--gold)'},
+    {bg:'var(--orange-dim)',txt:'var(--orange)'},
+    {bg:'var(--green-dim)', txt:'var(--green)'},
+    {bg:'var(--red-dim)',   txt:'var(--red)'},
+  ];
+
+  const visits = LEADS.filter(l => ['Site Visit','Negotiation'].includes(l.stage));
+  const pipeComm = visits.reduce((s,l) => s + l.bmax * 0.02 * 0.35, 0);
+  const pipeEl = document.getElementById('pipe-comm-total');
+  if (pipeEl) pipeEl.textContent = fmtINR(pipeComm);
+
+  const board = document.getElementById('pipe-board');
+  if (!board) return;
+
+  board.innerHTML = stages.map((stage, si) => {
+    const leads = LEADS.filter(l => l.stage === stage);
+    const c = colors[si];
+    return '<div class="pipe-col" ondragover="event.preventDefault()" ondrop="onDrop(event,\'' + stage + '\')">' +
+      '<div class="pipe-col-hdr" style="background:' + c.bg + ';color:' + c.txt + '">' +
+        '<span>' + stage + '</span><span class="pipe-count">' + leads.length + '</span>' +
+      '</div>' +
+      leads.slice(0, 6).map(l => {
+        const ac = l.score >= 70 ? 'var(--red)' : l.score >= 50 ? 'var(--orange)' : l.score >= 35 ? 'var(--gold)' : 'var(--blue)';
+        const comm = Math.round(l.bmax * 0.02 / 1000);
+        return '<div class="pipe-card" draggable="true" data-id="' + l.id + '" style="--card-accent:' + ac + '"' +
+          ' ondragstart="onDragStart(event,\'' + l.id + '\')"' +
+          ' onclick="openModal(\'' + l.id + '\')">' +
+          '<div class="pipe-card-name">' + l.name.split(' ')[0] + ' ' + (l.name.split(' ')[1] ? l.name.split(' ')[1][0] + '.' : '') + '</div>' +
+          '<div class="pipe-card-meta">' + l.cfg + ' · ' + l.loc + '</div>' +
+          '<div class="pipe-card-meta">' + fmtBudget(l.bmin, l.bmax) + '</div>' +
+          '<div class="pipe-card-foot">' +
+            '<span class="pipe-score" style="color:' + ac + '">●' + l.score + '</span>' +
+            '<span class="pipe-comm">₹' + comm + 'K</span>' +
+          '</div></div>';
+      }).join('') +
+      (leads.length > 6 ? '<div class="empty" style="padding:8px;font-size:11px">+' + (leads.length-6) + ' more</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+let dragId = null;
+function onDragStart(e, id) { dragId = id; e.target.style.opacity = '0.4'; }
+function onDrop(e, stage) {
+  e.preventDefault();
+  if (!dragId) return;
+  const lead = LEADS.find(l => l.id === dragId);
+  if (lead && lead.stage !== stage) {
+    lead.stage = stage;
+    sendToSheets({action:'save_note', lead_id: lead.id, note:'Stage updated to ' + stage, stage: stage, date: new Date().toLocaleString('en-IN')});
+    toast('📌 Moved to ' + stage);
+    renderPipeline();
+  }
+  document.querySelectorAll('.pipe-card').forEach(c => c.style.opacity = '1');
+  dragId = null;
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — SCRIPTS
+// ════════════════════════════════════════════════════════
+function renderScripts() {
+  const tags = ['all', ...new Set(SCRIPTS.map(s => s.tag))];
+  document.getElementById('scripts-tags').innerHTML = tags.map(t =>
+    '<button class="script-tag' + (t === activeScriptTag ? ' active' : '') + '" onclick="filterScripts(\'' + t + '\')">' + t.toUpperCase() + '</button>'
+  ).join('');
+
+  const list = activeScriptTag === 'all' ? SCRIPTS : SCRIPTS.filter(s => s.tag === activeScriptTag);
+  document.getElementById('scripts-list').innerHTML = list.map(s =>
+    '<div class="script-card">' +
+      '<div class="script-card-hdr">' +
+        '<span class="script-title">' + s.title + '</span>' +
+        '<button class="script-copy-btn" onclick="copy(' + JSON.stringify(s.text) + ')">📋 Copy</button>' +
+      '</div>' +
+      '<div class="script-body">' + s.text + '</div>' +
+    '</div>'
+  ).join('');
+}
+
+function filterScripts(tag) {
+  activeScriptTag = tag;
+  renderScripts();
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — REFERRALS
+// ════════════════════════════════════════════════════════
+function renderReferrals() {
+  fetch(GAS_URL + '?action=get_partner&refId=ALL&t=' + Date.now())
+    .then(r => r.text())
+    .then(text => {
+      const clean = text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
+      const json = JSON.parse(clean);
+      if (json && json.partners) renderPartnerData(json.partners);
+    })
+    .catch(() => {
+      // Show leads-based referral summary instead
+      const refLeads = LEADS.filter(l => l.refId);
+      const partners = {};
+      refLeads.forEach(l => {
+        if (!partners[l.refId]) partners[l.refId] = {id: l.refId, leads: 0, visits: 0, bookings: 0};
+        partners[l.refId].leads++;
+        if (['Site Visit','Negotiation','Closed'].includes(l.stage)) partners[l.refId].visits++;
+        if (l.stage === 'Closed') partners[l.refId].bookings++;
+      });
+      const arr = Object.values(partners).sort((a,b) => b.bookings - a.bookings);
+      if (arr.length === 0) {
+        document.getElementById('ref-lb').innerHTML = '<div class="empty">No referral leads yet</div>';
+      } else {
+        document.getElementById('ref-lb').innerHTML = arr.map((p,i) =>
+          '<div class="ref-row">' +
+            '<span class="ref-rank">' + (i+1) + '</span>' +
+            '<div><div class="ref-name">' + p.id + '</div>' +
+            '<div class="ref-meta">' + p.leads + ' leads · ' + p.bookings + ' bookings</div></div>' +
+            '<div class="ref-comm">' + p.bookings + ' 🏆</div>' +
+          '</div>'
+        ).join('');
+      }
+    });
+}
+
+function renderPartnerData(partners) {
+  const sorted = [...partners].sort((a,b) => (b.bookings||0) - (a.bookings||0));
+  const tierMap = {Gold:'tier-gold', Silver:'tier-silver', Bronze:'tier-bronze'};
+  document.getElementById('ref-lb').innerHTML = sorted.length === 0
+    ? '<div class="empty">No partners registered yet</div>'
+    : sorted.map((p,i) =>
+        '<div class="ref-row">' +
+          '<span class="ref-rank">' + (i+1) + '</span>' +
+          '<div>' +
+            '<div class="ref-name">' + (p.name||p.id) + '</div>' +
+            '<div class="ref-meta">' + p.id + ' · ' + (p.totalLeads||0) + ' leads · ' + (p.bookings||0) + ' bookings</div>' +
+          '</div>' +
+          '<div style="text-align:right">' +
+            '<div class="ref-comm">' + fmtINR(p.commEarned||0) + '</div>' +
+            (p.tier ? '<span class="tier-badge ' + (tierMap[p.tier]||'tier-bronze') + '">' + p.tier + '</span>' : '') +
+          '</div>' +
+        '</div>'
+      ).join('');
+}
+
+function markPaid() {
+  const pid    = (document.getElementById('pay-pid').value||'').toUpperCase().trim();
+  const amount = document.getElementById('pay-amount').value;
+  const utr    = (document.getElementById('pay-utr').value||'').trim();
+  if (!pid.match(/^RP\d+/)) { toast('❌ Enter a valid Partner ID (RP1234)'); return; }
+  if (!amount || isNaN(amount) || parseFloat(amount) <= 0) { toast('❌ Enter a valid amount'); return; }
+  if (!utr) { toast('❌ Enter UTR / reference number'); return; }
+  sendToSheets({action:'mark_paid', partner_id: pid, amount, utr, date: new Date().toLocaleDateString('en-IN')});
+  toast('✅ Payment of ' + fmtINR(amount) + ' to ' + pid + ' logged!');
+  document.getElementById('pay-pid').value = '';
+  document.getElementById('pay-amount').value = '';
+  document.getElementById('pay-utr').value = '';
+  setTimeout(renderReferrals, 500);
+}
+
+// ════════════════════════════════════════════════════════
+// MODAL
+// ════════════════════════════════════════════════════════
+function openModal(id) {
+  currentLead = LEADS.find(l => l.id === id);
+  if (!currentLead) return;
+  const l = currentLead;
+
+  document.getElementById('m-name').textContent = l.name;
+  document.getElementById('m-meta').textContent = l.phone + ' · ' + l.cfg + ' · ' + l.loc + ' · ' + fmtBudget(l.bmin, l.bmax);
+  document.getElementById('m-stage').value = l.stage || 'New Lead';
+  document.getElementById('m-note').value = '';
+
+  // Properties tab
+  const matches = findMatches(l);
+  const budgetStr = fmtBudget(l.bmin, l.bmax);
+  document.getElementById('mpane-suggest').innerHTML =
+    '<div class="info-grid">' +
+      '<div class="info-cell"><div class="info-label">Status</div><div class="info-val">' + statusPill(l.status) + '</div></div>' +
+      '<div class="info-cell"><div class="info-label">Score</div><div class="info-val">' + scoreRing(l.score) + '</div></div>' +
+      '<div class="info-cell"><div class="info-label">Funding</div><div class="info-val">' + (l.funding||'—') + '</div></div>' +
+      '<div class="info-cell"><div class="info-label">Timeline</div><div class="info-val">' + (l.timeline||'—') + '</div></div>' +
+    '</div>' +
+    (matches.length === 0 ? '<div class="empty">No matching inventory for ' + budgetStr + ' in ' + l.loc + '</div>' :
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">' + matches.length + ' matches for ' + budgetStr + ' in ' + l.loc + '</div>' +
+    matches.slice(0,5).map(m =>
+      '<div class="prop-card">' +
+        '<div class="prop-name">' + m.project + '</div>' +
+        '<div class="prop-meta">' + m.cfg + ' · ' + m.loc + ' · ' + fmtBudget(m.pmin,m.pmax) + ' · Match: <strong style="color:var(--gold)">' + m.matchScore + '</strong></div>' +
+        '<div class="prop-actions">' +
+          '<button class="prop-btn" onclick="copy(buildPropWA(' + JSON.stringify(m) + '))">💬 Copy WA</button>' +
+          '<button class="prop-btn" onclick="prefillNote(' + JSON.stringify(m.project) + ')">📝 Add to Note</button>' +
+        '</div>' +
+      '</div>'
+    ).join(''));
+
+  // History tab
+  const hist = discussionHistory[id] || [];
+  document.getElementById('mpane-history').innerHTML = hist.length === 0
+    ? '<div class="empty">No notes yet. Add your first note below.</div>'
+    : hist.map(h => '<div class="history-entry"><div class="history-date">' + h.date + ' · ' + h.stage + '</div>' + h.text + '</div>').join('');
+
+  // WA tab
+  document.getElementById('mpane-wa').innerHTML = buildWAPane(l, matches);
+
+  // Show first tab
+  switchMTab('suggest', document.querySelector('.m-tab'));
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  currentLead = null;
+}
+
+function switchMTab(name, btn) {
+  document.querySelectorAll('.m-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.m-pane').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  else document.querySelectorAll('.m-tab')[0].classList.add('active');
+  const pane = document.getElementById('mpane-' + name);
+  if (pane) pane.classList.add('active');
+}
+
+function saveNote() {
+  if (!currentLead) return;
+  const note  = document.getElementById('m-note').value.trim();
+  const stage = document.getElementById('m-stage').value;
+  if (!note) { toast('Please enter a note first'); return; }
+
+  const entry = {
+    date: new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+    stage, text: note
+  };
+  if (!discussionHistory[currentLead.id]) discussionHistory[currentLead.id] = [];
+  discussionHistory[currentLead.id].push(entry);
+  currentLead.stage = stage;
+  currentLead.notes = note;
+
+  const idx = LEADS.findIndex(l => l.id === currentLead.id);
+  if (idx >= 0) { LEADS[idx].stage = stage; LEADS[idx].notes = note; }
+
+  sendToSheets({action:'save_note', lead_id: currentLead.id, note, stage, date: entry.date});
+  document.getElementById('mpane-history').innerHTML =
+    discussionHistory[currentLead.id].map(h =>
+      '<div class="history-entry"><div class="history-date">' + h.date + ' · ' + h.stage + '</div>' + h.text + '</div>'
+    ).join('');
+  document.getElementById('m-note').value = '';
+  toast('✅ Note saved + synced to Sheets');
+  renderAll();
+}
+
+function prefillNote(project) {
+  document.getElementById('m-note').value = 'Discussed ' + project + '. ';
+  switchMTab('notes', null);
+  document.querySelectorAll('.m-tab')[1].classList.add('active');
+}
+
+// ════════════════════════════════════════════════════════
+// WHATSAPP BUILDERS
+// ════════════════════════════════════════════════════════
+function buildWAPane(l, matches) {
+  const top = matches[0];
+  const msg = top
+    ? 'Hi ' + l.name.split(' ')[0] + '!\n\nThank you for your enquiry with NextGen Realtors.\n\nFor your requirement of ' + l.cfg + ' in ' + l.loc + ' (Budget: ' + fmtBudget(l.bmin,l.bmax) + '), I have found ' + matches.length + ' excellent options.\n\nTop recommendation:\n🏗 ' + top.project + ' by ' + top.builder + '\n📍 ' + top.loc + ' · ' + top.cfg + '\n💰 ' + fmtBudget(top.pmin,top.pmax) + '\n\nCan we schedule a quick call or site visit?\n\n– Rushabh | NextGen Realtors\n📞 +91 94040 06336'
+    : 'Hi ' + l.name.split(' ')[0] + '!\n\nThank you for your enquiry. I am compiling the best options for ' + l.cfg + ' in ' + l.loc + ' and will share them shortly.\n\n– Rushabh | NextGen Realtors';
+  return '<div style="margin-bottom:12px;font-size:12px;color:var(--muted)">Ready-to-send WhatsApp message:</div>' +
+    '<div style="background:var(--bg4);border-radius:8px;padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;border:1px solid var(--border)">' + msg + '</div>' +
+    '<button class="btn-sm btn-gold" style="margin-top:10px;width:100%" onclick="copy(' + JSON.stringify(msg) + ')">📋 Copy Message</button>';
+}
+
+function buildPropWA(m) {
+  return '🏗 *' + m.project + '*\nBuilder: ' + m.builder + '\n📍 ' + m.loc + ' · ' + m.cfg + '\n💰 ' + fmtBudget(m.pmin,m.pmax) + '\n✅ Commission: ' + fmtINR(m.pmax * m.comm);
+}
+
+function copyLeadWA(id) {
+  const l = LEADS.find(x => x.id === id);
+  if (!l) return;
+  const matches = findMatches(l);
+  const msg = matches.length > 0
+    ? 'Hi ' + l.name.split(' ')[0] + '! Found ' + matches.length + ' options for ' + l.cfg + ' in ' + l.loc + '. Top pick: ' + matches[0].project + ' at ' + fmtBudget(matches[0].pmin,matches[0].pmax) + '. Want details? – Rushabh, NextGen Realtors'
+    : 'Hi ' + l.name.split(' ')[0] + '! Searching ' + l.cfg + ' options in ' + l.loc + ' for you. Will share shortly. – Rushabh, NextGen Realtors';
+  copy(msg);
+}
+
+// ════════════════════════════════════════════════════════
+// QUICK ADD
+// ════════════════════════════════════════════════════════
+function openQA() { document.getElementById('qa-overlay').classList.add('open'); setTimeout(() => document.getElementById('qa-name').focus(), 100); }
+function closeQA() { document.getElementById('qa-overlay').classList.remove('open'); }
+function submitQA() {
+  const name  = document.getElementById('qa-name').value.trim();
+  const phone = document.getElementById('qa-phone').value.replace(/\D/g,'').slice(-10);
+  if (!name || phone.length < 10) { toast('❌ Name and 10-digit phone required'); return; }
+  const loc   = document.getElementById('qa-loc').value;
+  const cfg   = document.getElementById('qa-cfg').value;
+  const bmin  = document.getElementById('qa-bmin').value;
+  const bmax  = document.getElementById('qa-bmax').value;
+  const src   = document.getElementById('qa-src').value;
+  const note  = document.getElementById('qa-note').value.trim();
+  sendToSheets({action:'landing_page_lead', name, phone, loc, cfg, budget_min:bmin||0, budget_max:bmax||0, source:src, notes:note, purpose:'Self', timeline:'', funding:'', email:''});
+  const tmp = {
+    id:'TMP_'+Date.now(), name, phone, loc, cfg, email:'',
+    bmin:parseFloat(bmin)||0, bmax:parseFloat(bmax)||0,
+    purpose:'Self', urgency:3, funding:'', timeline:'',
+    source:src, status:'Active', stage:'New Lead', score:30,
+    notes:note, dateAdded:new Date().toLocaleDateString('en-IN'), nextFollowUp:'',
+    refId:'', refStatus:'', dueOffset:1, daysAgo:0
+  };
+  LEADS.unshift(tmp);
+  closeQA();
+  renderAll();
+  setTimeout(() => openModal(tmp.id), 200);
+  toast('✅ Lead added! Syncing to Sheets...');
+  ['qa-name','qa-phone','qa-bmin','qa-bmax','qa-note'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+// ════════════════════════════════════════════════════════
+// COMMISSION CALCULATOR
+// ════════════════════════════════════════════════════════
+function openCalc()  { document.getElementById('calc-overlay').classList.add('open'); }
+function closeCalc() { document.getElementById('calc-overlay').classList.remove('open'); }
+function runCalc() {
+  const price   = parseFloat(document.getElementById('calc-price').value)||0;
+  const rate    = parseFloat(document.getElementById('calc-rate').value)||0.02;
+  const partner = parseFloat(document.getElementById('calc-partner').value)||0;
+  if (!price) { document.getElementById('calc-result').innerHTML = ''; return; }
+  const gross   = price * rate;
+  const gst     = gross * 0.18;
+  const afterGst= gross - gst;
+  const net     = afterGst - partner;
+  document.getElementById('calc-result').innerHTML =
+    '<div class="calc-row"><span class="calc-label">Sale Price</span><span class="calc-val">' + fmtINR(price) + '</span></div>' +
+    '<div class="calc-row"><span class="calc-label">Gross Commission (' + (rate*100) + '%)</span><span class="calc-val">' + fmtINR(gross) + '</span></div>' +
+    '<div class="calc-row"><span class="calc-label">GST (18%)</span><span class="calc-val" style="color:var(--red)">– ' + fmtINR(gst) + '</span></div>' +
+    '<div class="calc-row"><span class="calc-label">After GST</span><span class="calc-val">' + fmtINR(afterGst) + '</span></div>' +
+    (partner > 0 ? '<div class="calc-row"><span class="calc-label">Partner Payout</span><span class="calc-val" style="color:var(--orange)">– ' + fmtINR(partner) + '</span></div>' : '') +
+    '<div class="calc-row total"><span class="calc-label" style="font-weight:700;color:var(--text)">🏆 Your Net Earnings</span><span class="calc-val gold">' + fmtINR(net) + '</span></div>';
+}
+
+// ════════════════════════════════════════════════════════
+// GOOGLE SHEETS WRITE
+// ════════════════════════════════════════════════════════
+function sendToSheets(params) {
+  params.key = GAS_API_KEY;
+  const qs = Object.entries(params).map(([k,v]) => encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&');
+  const img = new Image();
+  img.src = GAS_URL + '?' + qs;
+}
+
+// ════════════════════════════════════════════════════════
+// TAB NAVIGATION
+// ════════════════════════════════════════════════════════
+function switchTab(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'cmd')       renderCommand();
+  if (id === 'leads')     renderLeads();
+  if (id === 'score')     renderScore();
+  if (id === 'pipeline')  renderPipeline();
+  if (id === 'scripts')   renderScripts();
+  if (id === 'referrals') renderReferrals();
+  if (id === 'inventory') { if (INVENTORY_DATA.length === 0) loadInventory(); else renderInventory(); }
+}
+
+function renderAll() {
+  renderCommand();
+  renderLeads();
+  renderScore();
+  renderPipeline();
+  renderScripts();
+}
+
+// ════════════════════════════════════════════════════════
+// INVENTORY DATA + STATE
+// ════════════════════════════════════════════════════════
+// INVENTORY_DATA: live inventory from Sheets (supplements local INVENTORY constant)
+let LIVE_INV = []; // fetched from Sheets
+let invSortKey = 'project', invSortDir = 1;
+
+function loadInventory() {
+  const cb = 'nginv' + Date.now();
+  const s  = document.createElement('script');
+  window[cb] = function(json) {
+    delete window[cb];
+    try { document.head.removeChild(s); } catch(e) {}
+    if (json && json.inventory) {
+      LIVE_INV = json.inventory;
+      renderInventory();
+    }
+  };
+  s.onerror = function() {
+    delete window[cb]; try { document.head.removeChild(s); } catch(e) {}
+    // Fall back to local INVENTORY array if Sheets fails
+    LIVE_INV = INVENTORY;
+    renderInventory();
+  };
+  s.src = GAS_URL + '?action=get_inventory&key=' + GAS_API_KEY + '&callback=' + cb;
+  document.head.appendChild(s);
+}
+
+function getInvData() {
+  return LIVE_INV.length > 0 ? LIVE_INV : INVENTORY;
+}
+
+function renderInventory() {
+  const q      = (document.getElementById('inv-search').value || '').toLowerCase();
+  const fLoc   = document.getElementById('inv-loc').value;
+  const fCfg   = document.getElementById('inv-cfg').value;
+  const fSt    = document.getElementById('inv-status').value;
+
+  let data = getInvData().filter(p => {
+    if (q && !p.project.toLowerCase().includes(q) && !p.builder.toLowerCase().includes(q) &&
+        !(p.loc||'').toLowerCase().includes(q)) return false;
+    if (fLoc && p.loc !== fLoc)    return false;
+    if (fCfg && p.cfg !== fCfg)    return false;
+    if (fSt  && p.status !== fSt)  return false;
+    return true;
+  }).sort((a,b) => {
+    let av = a[invSortKey]||'', bv = b[invSortKey]||'';
+    if (typeof av === 'string') return invSortDir * av.localeCompare(bv);
+    return invSortDir * ((av||0) - (bv||0));
+  });
+
+  document.getElementById('inv-count').textContent = data.length + ' properties';
+
+  const statusColor = { Available:'var(--green)', 'Low Stock':'var(--orange)', 'Sold Out':'var(--red)' };
+  const statusBg    = { Available:'var(--green-dim)', 'Low Stock':'var(--orange-dim)', 'Sold Out':'var(--red-dim)' };
+
+  if (data.length === 0) {
+    document.getElementById('inv-tbody').innerHTML = '<tr><td colspan="9" class="empty">No properties found. Click "+ Add Property" to add your first listing.</td></tr>';
+    return;
+  }
+
+  document.getElementById('inv-tbody').innerHTML = data.map(p => {
+    const stColor = statusColor[p.status] || 'var(--muted)';
+    const stBg    = statusBg[p.status]    || 'var(--bg4)';
+    const matchCount = LEADS.filter(l => {
+      const locOk    = (l.loc||'').toLowerCase() === (p.loc||'').toLowerCase();
+      const budgetOk = (l.bmax||0) >= p.pmin * 0.9 && (l.bmin||0) <= p.pmax * 1.1;
+      return locOk && budgetOk && l.stage !== 'Closed' && l.stage !== 'Lost';
+    }).length;
+    return '<tr>' +
+      '<td><div style="font-weight:700;font-size:14px">' + p.project + '</div></td>' +
+      '<td style="font-size:12px;color:var(--muted)">' + (p.builder||'—') + '</td>' +
+      '<td><span style="color:var(--gold);font-weight:600">' + (p.loc||'—') + '</span></td>' +
+      '<td style="font-size:12px">' + (p.cfg||'—') + '</td>' +
+      '<td style="font-family:var(--mono);font-size:12px;white-space:nowrap">' + fmtBudget(p.pmin,p.pmax) + '</td>' +
+      '<td style="font-family:var(--mono);font-size:12px;color:var(--green);font-weight:700">' + fmtINR(p.netComm||0) + '</td>' +
+      '<td style="font-family:var(--mono);font-size:13px;text-align:center">' + (p.units||0) + '</td>' +
+      '<td><span style="display:inline-block;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;background:' + stBg + ';color:' + stColor + '">' + (p.status||'Available') + '</span></td>' +
+      '<td style="white-space:nowrap">' +
+        (matchCount > 0 ? '<span title="' + matchCount + ' active buyers match this property" style="cursor:default;font-size:11px;color:var(--gold);font-weight:700;margin-right:8px">👥 ' + matchCount + '</span>' : '') +
+        '<button class="wa-btn" onclick="copyPropWA(' + JSON.stringify(p).replace(/"/g, '&quot;') + ')">💬</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function sortInv(key) {
+  if (invSortKey === key) invSortDir *= -1; else { invSortKey = key; invSortDir = 1; }
+  renderInventory();
+}
+
+function copyPropWA(p) {
+  const msg = '🏗 *' + p.project + '*\nBuilder: ' + (p.builder||'') + '\n📍 ' + (p.loc||'') + ' · ' + (p.cfg||'') + '\n💰 ' + fmtBudget(p.pmin,p.pmax) + '\n✅ ' + (p.units||0) + ' units available\n\nInterested? Call NextGen Realtors: +91 94040 06336';
+  copy(msg);
+}
+
+// ── Add Property ────────────────────────────────────────────────
+function openAddProperty()  { document.getElementById('addprop-overlay').classList.add('open'); }
+function closeAddProperty() { document.getElementById('addprop-overlay').classList.remove('open'); }
+
+function submitAddProperty() {
+  const project = document.getElementById('ap-project').value.trim();
+  const builder = document.getElementById('ap-builder').value.trim();
+  const loc     = document.getElementById('ap-loc').value;
+  const cfg     = document.getElementById('ap-cfg').value;
+  const pmin    = document.getElementById('ap-pmin').value;
+  const pmax    = document.getElementById('ap-pmax').value;
+  const units   = document.getElementById('ap-units').value;
+  const comm    = document.getElementById('ap-comm').value;
+  const notes   = document.getElementById('ap-notes').value.trim();
+  const errEl   = document.getElementById('ap-error');
+
+  if (!project || !builder || !loc || !cfg) {
+    errEl.textContent = '❌ Project, Builder, Locality and Config are required.';
+    errEl.style.display = 'block'; return;
+  }
+  if (!pmin || !pmax) {
+    errEl.textContent = '❌ Enter both Price Min and Price Max.';
+    errEl.style.display = 'block'; return;
+  }
+  errEl.style.display = 'none';
+
+  // Add to local state immediately for instant feedback
+  const newProp = {
+    project, builder, loc, cfg,
+    pmin: parseFloat(pmin), pmax: parseFloat(pmax),
+    commission: parseFloat(comm), units: parseInt(units)||1,
+    status: 'Available',
+    partnerComm: {'1 BHK':25000,'2 BHK':40000,'2.5 BHK':50000,'3 BHK':60000,'4 BHK':80000}[cfg]||50000,
+    netComm: Math.round(parseFloat(pmax)*parseFloat(comm)*0.82 - ({'1 BHK':25000,'2 BHK':40000,'2.5 BHK':50000,'3 BHK':60000,'4 BHK':80000}[cfg]||50000)),
+    notes
+  };
+  LIVE_INV.unshift(newProp);
+  INVENTORY.unshift(newProp); // also update local array
+
+  // Sync to Sheets
+  sendToSheets({ action:'add_property', project, builder, loc, cfg, pmin, pmax, units, commission:comm, notes });
+
+  closeAddProperty();
+  renderInventory();
+  toast('✅ Property added! Syncing to Sheets...');
+  ['ap-project','ap-builder','ap-pmin','ap-pmax','ap-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+// ── Funnel drill: click a funnel stage → jump to filtered leads ──
+function funnelDrill(stage) {
+  document.getElementById('flt-stage').value = stage;
+  document.getElementById('flt-status').value = '';
+  document.getElementById('leads-search').value = '';
+  switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
+  renderLeads();
+  toast('📊 Showing: ' + stage);
+}
+
+// ── Source drill: click a source → jump to filtered leads ─────────
+function sourceDrill(source) {
+  document.getElementById('leads-search').value = source;
+  document.getElementById('flt-status').value = '';
+  document.getElementById('flt-stage').value = '';
+  switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
+  renderLeads();
+  toast('💎 Source: ' + source);
+}
+
+// ── KPI drill-down: click a KPI card → jump to filtered leads ──
+function kpiDrill(type) {
+  const statusEl = document.getElementById('flt-status');
+  const stageEl  = document.getElementById('flt-stage');
+  const searchEl = document.getElementById('leads-search');
+
+  // Reset all filters first
+  statusEl.value = '';
+  stageEl.value  = '';
+  searchEl.value = '';
+  document.getElementById('flt-loc').value = '';
+  clearDateFilter();
+
+  switch(type) {
+    case 'hot':
+      statusEl.value = 'Hot';
+      break;
+    case 'overdue':
+      // Filter to overdue: set a custom marker via search (use status Active+Hot with overdue)
+      // We'll use a global kpiFilter that renderLeads checks
+      window._kpiFilter = l => l.dueOffset < 0 && l.stage !== 'Closed' && l.stage !== 'Lost';
+      break;
+    case 'pipeline':
+      // Site Visit + Negotiation
+      window._kpiFilter = l => ['Site Visit','Negotiation'].includes(l.stage);
+      break;
+    case 'visits':
+      stageEl.value = 'Site Visit';
+      break;
+    case 'closed':
+      stageEl.value = 'Closed';
+      break;
+  }
+  switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
+  renderLeads();
+  // Clear custom filter after render
+  if (type !== 'overdue' && type !== 'pipeline') window._kpiFilter = null;
+}
+
+// ════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  const tabs = ['cmd','leads','score','pipeline','inventory','scripts','referrals'];
+  if (e.key >= '1' && e.key <= '6') {
+    const idx = parseInt(e.key) - 1;
+    const btns = document.querySelectorAll('.nav-tab');
+    switchTab(tabs[idx], btns[idx]);
+    return;
+  }
+  switch(e.key.toLowerCase()) {
+    case 'n': openQA(); break;
+    case 'c': openCalc(); break;
+    case 'f':
+      switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
+      setTimeout(() => document.getElementById('leads-search').focus(), 100);
+      break;
+    case 'escape':
+      closeModal(); closeQA(); closeCalc();
+      document.getElementById('kb-hint').classList.remove('open');
+      break;
+    case '?':
+      document.getElementById('kb-hint').classList.toggle('open');
+      break;
+  }
+});
+
+
+// ════════════════════════════════════════════════════════
+// INVENTORY STATE + RENDER
+// ════════════════════════════════════════════════════════
+let INVENTORY_DATA = [];
+
+function loadInventory() {
+  fetch(GAS_URL + '?action=get_inventory&key=' + API_KEY + '&t=' + Date.now())
+    .then(r => r.text())
+    .then(text => {
+      const clean = text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
+      const json  = JSON.parse(clean);
+      if (json && json.inventory) {
+        LIVE_INV = json.inventory;
+        renderInventory();
+      }
+    })
+    .catch(() => {
+      // Use hardcoded inventory as fallback
+      INVENTORY_DATA = [
+        {rowNum:2, project:'Godrej Horizon',     builder:'Godrej Properties', loc:'Bavdhan',       cfg:'2 BHK',   pmin:8200000,  pmax:12000000, units:8,  possession:'Ready',    partnerComm:40000,  netComm:204000, status:'Active', amenities:'Pool, Gym', rera:'P52100001'},
+        {rowNum:3, project:'Godrej Horizon',     builder:'Godrej Properties', loc:'Bavdhan',       cfg:'3 BHK',   pmin:13500000, pmax:19000000, units:4,  possession:'Ready',    partnerComm:60000,  netComm:320000, status:'Active', amenities:'Pool, Gym', rera:'P52100001'},
+        {rowNum:4, project:'VTP Bellissimo',     builder:'VTP Realty',        loc:'Kharadi',       cfg:'2 BHK',   pmin:8800000,  pmax:13000000, units:12, possession:'Dec 2025', partnerComm:40000,  netComm:216000, status:'Active', amenities:'Club house, Gym', rera:'P52100002'},
+        {rowNum:5, project:'VTP Bellissimo',     builder:'VTP Realty',        loc:'Kharadi',       cfg:'3 BHK',   pmin:12000000, pmax:19000000, units:6,  possession:'Dec 2025', partnerComm:60000,  netComm:320000, status:'Active', amenities:'Club house, Gym', rera:'P52100002'},
+        {rowNum:6, project:'Kolte Patil',        builder:'Kolte Patil',       loc:'Hinjewadi',     cfg:'2 BHK',   pmin:7200000,  pmax:11000000, units:20, possession:'Jun 2026', partnerComm:40000,  netComm:180000, status:'Active', amenities:'Garden, Gym', rera:'P52100003'},
+        {rowNum:7, project:'Panchshil Eon',      builder:'Panchshil Realty',  loc:'Kharadi',       cfg:'2.5 BHK', pmin:10500000, pmax:15000000, units:5,  possession:'Ready',    partnerComm:50000,  netComm:250000, status:'Active', amenities:'5-star amenities', rera:'P52100004'},
+        {rowNum:8, project:'Kumar Prospera',     builder:'Kumar Properties',  loc:'Wadgaon Sheri', cfg:'2 BHK',   pmin:7500000,  pmax:11000000, units:15, possession:'Mar 2026', partnerComm:40000,  netComm:185000, status:'Active', amenities:'Garden', rera:'P52100005'},
+        {rowNum:9, project:'Magarpatta Roost',   builder:'Magarpatta Corp',   loc:'Mundhwa',       cfg:'3 BHK',   pmin:13000000, pmax:19500000, units:3,  possession:'Ready',    partnerComm:60000,  netComm:330000, status:'Active', amenities:'Township', rera:'P52100006'},
+        {rowNum:10,project:'Baner Greens',       builder:'Paranjape Schemes', loc:'Baner',         cfg:'2 BHK',   pmin:9200000,  pmax:14000000, units:10, possession:'Sep 2026', partnerComm:40000,  netComm:234000, status:'Active', amenities:'Pool, Gym', rera:'P52100007'},
+        {rowNum:11,project:'Stellar One',        builder:'VTP Realty',        loc:'Pune Station',  cfg:'2 BHK',   pmin:9500000,  pmax:13500000, units:7,  possession:'Ready',    partnerComm:40000,  netComm:224000, status:'Active', amenities:'Rooftop garden', rera:'P52100008'},
+        {rowNum:12,project:'Solaris One',        builder:'Gera Developments', loc:'Yerawada',      cfg:'3 BHK',   pmin:11500000, pmax:17000000, units:4,  possession:'Dec 2025', partnerComm:60000,  netComm:280000, status:'Active', amenities:'Pool, Gym', rera:'P52100009'},
+      ];
+      renderInventory();
+    });
+}
+
+function renderInventory() {
+  const q       = (document.getElementById('inv-search').value||'').toLowerCase();
+  const fLoc    = document.getElementById('inv-flt-loc').value;
+  const fCfg    = document.getElementById('inv-flt-cfg').value;
+  const fStatus = document.getElementById('inv-flt-status').value;
+
+  let data = INVENTORY_DATA.filter(p => {
+    if (q && !(p.project||'').toLowerCase().includes(q) && !(p.builder||'').toLowerCase().includes(q) && !(p.loc||'').toLowerCase().includes(q)) return false;
+    if (fLoc    && p.loc    !== fLoc)    return false;
+    if (fCfg    && p.cfg    !== fCfg)    return false;
+    if (fStatus && p.status !== fStatus) return false;
+    return true;
+  }).sort((a,b) => {
+    const av = a[invSortKey]||'', bv = b[invSortKey]||'';
+    if (typeof av === 'number') return invSortDir * (av - bv);
+    return invSortDir * String(av).localeCompare(String(bv));
+  });
+
+  document.getElementById('inv-count').textContent = data.length + ' properties';
+
+  if (data.length === 0) {
+    document.getElementById('inv-tbody').innerHTML = '<tr><td colspan="9" class="empty">No properties match filters</td></tr>';
+    return;
+  }
+
+  const statusColor = {Active:'pill-closed', 'Sold Out':'pill-cold', 'Coming Soon':'pill-warm'};
+  document.getElementById('inv-tbody').innerHTML = data.map(p => `
+    <tr style="cursor:default">
+      <td>
+        <div style="font-weight:700;font-size:13px">${p.project}</div>
+        ${p.rera ? '<div style="font-size:10px;color:var(--muted);font-family:var(--mono)">RERA: '+p.rera+'</div>' : ''}
+      </td>
+      <td style="font-size:12px;color:var(--muted)">${p.builder}</td>
+      <td><span style="color:var(--gold);font-weight:600;font-size:12px">${p.loc}</span></td>
+      <td><span class="status-pill pill-active">${p.cfg}</span></td>
+      <td style="font-family:var(--mono);font-size:12px">₹${fmtL(p.pmin)}–${fmtL(p.pmax)}<br><span style="color:var(--muted);font-size:10px">${p.units||0} units · ${p.possession||'—'}</span></td>
+      <td style="font-family:var(--mono);font-weight:700;color:var(--orange)">${fmtINR(p.partnerComm||0)}</td>
+      <td style="font-family:var(--mono);font-weight:700;color:var(--green)">${fmtINR(p.netComm||0)}</td>
+      <td><span class="status-pill ${statusColor[p.status]||'pill-cold'}">${p.status||'Active'}</span></td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        <button class="btn-sm" style="padding:4px 8px;font-size:11px;margin-right:4px" onclick="openInvModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">✏️ Edit</button>
+        <button class="btn-sm" style="padding:4px 8px;font-size:11px;color:var(--red)" onclick="deleteInvItem(${p.rowNum},'${p.project}')">🗑</button>
+      </td>
+    </tr>`).join('');
+}
+
+function sortInv(key) {
+  if (invSortKey === key) invSortDir *= -1; else { invSortKey = key; invSortDir = 1; }
+  renderInventory();
+}
+
+function openInvModal(item) {
+  document.getElementById('inv-modal-title').textContent = item ? '✏️ Edit Property' : '＋ Add Property';
+  document.getElementById('inv-edit-row').value   = item ? item.rowNum : '';
+  document.getElementById('inv-project').value    = item ? item.project    : '';
+  document.getElementById('inv-builder').value    = item ? item.builder    : '';
+  document.getElementById('inv-loc').value        = item ? item.loc        : '';
+  document.getElementById('inv-cfg').value        = item ? item.cfg        : '';
+  document.getElementById('inv-pmin').value       = item ? item.pmin       : '';
+  document.getElementById('inv-pmax').value       = item ? item.pmax       : '';
+  document.getElementById('inv-units').value      = item ? item.units      : '';
+  document.getElementById('inv-possession').value = item ? item.possession : '';
+  document.getElementById('inv-pcomm').value      = item ? item.partnerComm: '';
+  document.getElementById('inv-ncomm').value      = item ? item.netComm    : '';
+  document.getElementById('inv-rera').value       = item ? item.rera       : '';
+  document.getElementById('inv-status').value     = item ? item.status     : 'Active';
+  document.getElementById('inv-amenities').value  = item ? item.amenities  : '';
+  document.getElementById('inv-notes').value      = item ? item.notes      : '';
+  document.getElementById('inv-save-status').textContent = '';
+  document.getElementById('inv-overlay').classList.add('open');
+}
+
+function closeInvModal() {
+  document.getElementById('inv-overlay').classList.remove('open');
+}
+
+function saveInvItem() {
+  const rowNum = document.getElementById('inv-edit-row').value;
+  const project = document.getElementById('inv-project').value.trim();
+  const loc     = document.getElementById('inv-loc').value;
+  const cfg     = document.getElementById('inv-cfg').value;
+  if (!project || !loc || !cfg) { toast('❌ Project name, area and config required'); return; }
+
+  const params = {
+    project:     project,
+    builder:     document.getElementById('inv-builder').value.trim(),
+    loc, cfg,
+    pmin:        document.getElementById('inv-pmin').value||0,
+    pmax:        document.getElementById('inv-pmax').value||0,
+    units:       document.getElementById('inv-units').value||0,
+    possession:  document.getElementById('inv-possession').value.trim(),
+    partnerComm: document.getElementById('inv-pcomm').value||0,
+    netComm:     document.getElementById('inv-ncomm').value||0,
+    rera:        document.getElementById('inv-rera').value.trim(),
+    status:      document.getElementById('inv-status').value,
+    amenities:   document.getElementById('inv-amenities').value.trim(),
+    notes:       document.getElementById('inv-notes').value.trim(),
+    key:         API_KEY,
+  };
+
+  if (rowNum) {
+    params.action = 'edit_inventory';
+    params.rowNum = rowNum;
+    // Update local array
+    const idx = INVENTORY_DATA.findIndex(p => p.rowNum == rowNum);
+    if (idx >= 0) INVENTORY_DATA[idx] = {...INVENTORY_DATA[idx], ...params, pmin: parseInt(params.pmin), pmax: parseInt(params.pmax)};
+  } else {
+    params.action = 'add_inventory';
+    // Add to local array optimistically
+    const newItem = {...params, rowNum: Date.now(), pmin: parseInt(params.pmin)||0, pmax: parseInt(params.pmax)||0, partnerComm: parseInt(params.partnerComm)||0, netComm: parseInt(params.netComm)||0};
+    INVENTORY_DATA.push(newItem);
+  }
+
+  sendToSheets(params);
+  document.getElementById('inv-save-status').textContent = '✅ Saved!';
+  setTimeout(closeInvModal, 800);
+  renderInventory();
+  // Also update INVENTORY const for match engine
+  INVENTORY.length = 0;
+  INVENTORY_DATA.forEach(p => INVENTORY.push({...p}));
+  toast('✅ Property saved!');
+}
+
+function deleteInvItem(rowNum, name) {
+  if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+  INVENTORY_DATA = INVENTORY_DATA.filter(p => p.rowNum !== rowNum);
+  sendToSheets({action:'delete_inventory', rowNum, key: API_KEY});
+  renderInventory();
+  toast('🗑 Property deleted');
+}
+
+// ════════════════════════════════════════════════════════
+// CLICKABLE FUNNEL + SOURCE ROI
+// ════════════════════════════════════════════════════════
+function renderCommandFunnelAndSource() {
+  const stages = ['New Lead','First Call','Shortlisted','Site Visit','Negotiation','Closed'];
+  const total  = LEADS.length || 1;
+  document.getElementById('funnel-wrap').innerHTML = stages.map(s => {
+    const n = LEADS.filter(l => l.stage === s).length;
+    const pct = Math.round((n/total)*100);
+    return `<div class="funnel-stage" onclick="funnelDrill('${s}')" style="cursor:pointer" title="View ${s} leads">
+      <div class="funnel-label">${s}</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${pct}%"></div></div>
+      <div class="funnel-count" style="color:var(--gold);font-weight:700">${n} ↗</div>
+    </div>`;
+  }).join('');
+
+  const srcs  = [...new Set(LEADS.map(l => l.source).filter(Boolean))].slice(0,8);
+  document.getElementById('source-wrap').innerHTML = srcs.map(src => {
+    const n   = LEADS.filter(l => l.source === src).length;
+    const pct = Math.round((n/total)*100);
+    return `<div class="source-row" onclick="sourceDrill('${src}')" style="cursor:pointer" title="View ${src} leads">
+      <span class="source-name">${src}</span>
+      <span class="source-count" style="color:var(--text);font-weight:700">${n}</span>
+      <span class="source-pct" style="color:var(--gold);font-weight:600">${pct}% ↗</span>
+    </div>`;
+  }).join('') || '<div class="empty" style="padding:10px">No source data yet</div>';
+}
+
+function kpiDrill_stage(stage) {
+  window._kpiFilter = l => l.stage === stage;
+  switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
+  renderLeads();
+}
+
+function kpiDrill_source(src) {
+  window._kpiFilter = l => l.source === src;
+  switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
+  renderLeads();
+}
+
+// ════════════════════════════════════════════════════════
+// INLINE QUICK ACTIONS IN LEADS TABLE
+// ════════════════════════════════════════════════════════
+function quickLogCall(id) {
+  const lead = LEADS.find(l => l.id === id);
+  if (!lead) return;
+  openModal(id);
+  // Pre-switch to notes tab
+  setTimeout(() => {
+    switchMTab('notes', null);
+    document.querySelectorAll('.m-tab')[1].classList.add('active');
+    document.getElementById('m-note').focus();
+  }, 150);
+}
+
+function quickWA(id) {
+  const lead = LEADS.find(l => l.id === id);
+  if (!lead) return;
+  const msg = encodeURIComponent('Hi ' + lead.name.split(' ')[0] + '! This is Rushabh from NextGen Realtors. I have great ' + (lead.cfg||'property') + ' options in ' + (lead.loc||'Pune') + ' for you. Can we connect?');
+  window.open('https://wa.me/91' + lead.phone + '?text=' + msg, '_blank');
+}
+
+// ════════════════════════════════════════════════════════
+// STARTUP
+// ════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  renderScripts();
+  loadLiveData();
+  loadInventory();
+  setInterval(loadLiveData, 300000);
+});
+</script>
+</body>
+</html>
