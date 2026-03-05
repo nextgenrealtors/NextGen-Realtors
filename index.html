@@ -404,7 +404,6 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
   <button class="nav-tab" onclick="switchTab('scripts',this)">💬 Scripts</button>
   <button class="nav-tab" onclick="switchTab('inventory',this)">🏗 Inventory</button>
   <button class="nav-tab" onclick="switchTab('referrals',this)">🤝 Referrals</button>
-  <button class="nav-tab" onclick="switchTab('inventory',this)">🏗 Inventory</button>
   <div class="nav-live" id="nav-live"><span class="live-dot" id="live-dot" style="background:var(--muted)"></span><span id="live-label">Connecting...</span></div>
 </nav>
 
@@ -1816,24 +1815,21 @@ let LIVE_INV = []; // fetched from Sheets
 let invSortKey = 'project', invSortDir = 1;
 
 function loadInventory() {
-  const cb = 'nginv' + Date.now();
-  const s  = document.createElement('script');
-  window[cb] = function(json) {
-    delete window[cb];
-    try { document.head.removeChild(s); } catch(e) {}
-    if (json && json.inventory) {
-      LIVE_INV = json.inventory;
-      renderInventory();
-    }
-  };
-  s.onerror = function() {
-    delete window[cb]; try { document.head.removeChild(s); } catch(e) {}
-    // Fall back to local INVENTORY array if Sheets fails
-    LIVE_INV = INVENTORY;
-    renderInventory();
-  };
-  s.src = GAS_URL + '?action=get_inventory&key=' + GAS_API_KEY + '&callback=' + cb;
-  document.head.appendChild(s);
+  fetch(GAS_URL + '?action=get_inventory&key=' + API_KEY + '&t=' + Date.now())
+    .then(r => r.text())
+    .then(text => {
+      try {
+        const clean = text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
+        const json  = JSON.parse(clean);
+        if (json && json.inventory && json.inventory.length > 0) {
+          INVENTORY_DATA = json.inventory;
+          renderInventory();
+          return;
+        }
+      } catch(e) {}
+      loadFallbackInventory();
+    })
+    .catch(() => loadFallbackInventory());
 }
 
 function getInvData() {
@@ -2059,22 +2055,19 @@ function loadInventory() {
       }
     })
     .catch(() => {
-      // Use hardcoded inventory as fallback
-      INVENTORY_DATA = [
-        {rowNum:2, project:'Godrej Horizon',     builder:'Godrej Properties', loc:'Bavdhan',       cfg:'2 BHK',   pmin:8200000,  pmax:12000000, units:8,  possession:'Ready',    partnerComm:40000,  netComm:204000, status:'Active', amenities:'Pool, Gym', rera:'P52100001'},
-        {rowNum:3, project:'Godrej Horizon',     builder:'Godrej Properties', loc:'Bavdhan',       cfg:'3 BHK',   pmin:13500000, pmax:19000000, units:4,  possession:'Ready',    partnerComm:60000,  netComm:320000, status:'Active', amenities:'Pool, Gym', rera:'P52100001'},
-        {rowNum:4, project:'VTP Bellissimo',     builder:'VTP Realty',        loc:'Kharadi',       cfg:'2 BHK',   pmin:8800000,  pmax:13000000, units:12, possession:'Dec 2025', partnerComm:40000,  netComm:216000, status:'Active', amenities:'Club house, Gym', rera:'P52100002'},
-        {rowNum:5, project:'VTP Bellissimo',     builder:'VTP Realty',        loc:'Kharadi',       cfg:'3 BHK',   pmin:12000000, pmax:19000000, units:6,  possession:'Dec 2025', partnerComm:60000,  netComm:320000, status:'Active', amenities:'Club house, Gym', rera:'P52100002'},
-        {rowNum:6, project:'Kolte Patil',        builder:'Kolte Patil',       loc:'Hinjewadi',     cfg:'2 BHK',   pmin:7200000,  pmax:11000000, units:20, possession:'Jun 2026', partnerComm:40000,  netComm:180000, status:'Active', amenities:'Garden, Gym', rera:'P52100003'},
-        {rowNum:7, project:'Panchshil Eon',      builder:'Panchshil Realty',  loc:'Kharadi',       cfg:'2.5 BHK', pmin:10500000, pmax:15000000, units:5,  possession:'Ready',    partnerComm:50000,  netComm:250000, status:'Active', amenities:'5-star amenities', rera:'P52100004'},
-        {rowNum:8, project:'Kumar Prospera',     builder:'Kumar Properties',  loc:'Wadgaon Sheri', cfg:'2 BHK',   pmin:7500000,  pmax:11000000, units:15, possession:'Mar 2026', partnerComm:40000,  netComm:185000, status:'Active', amenities:'Garden', rera:'P52100005'},
-        {rowNum:9, project:'Magarpatta Roost',   builder:'Magarpatta Corp',   loc:'Mundhwa',       cfg:'3 BHK',   pmin:13000000, pmax:19500000, units:3,  possession:'Ready',    partnerComm:60000,  netComm:330000, status:'Active', amenities:'Township', rera:'P52100006'},
-        {rowNum:10,project:'Baner Greens',       builder:'Paranjape Schemes', loc:'Baner',         cfg:'2 BHK',   pmin:9200000,  pmax:14000000, units:10, possession:'Sep 2026', partnerComm:40000,  netComm:234000, status:'Active', amenities:'Pool, Gym', rera:'P52100007'},
-        {rowNum:11,project:'Stellar One',        builder:'VTP Realty',        loc:'Pune Station',  cfg:'2 BHK',   pmin:9500000,  pmax:13500000, units:7,  possession:'Ready',    partnerComm:40000,  netComm:224000, status:'Active', amenities:'Rooftop garden', rera:'P52100008'},
-        {rowNum:12,project:'Solaris One',        builder:'Gera Developments', loc:'Yerawada',      cfg:'3 BHK',   pmin:11500000, pmax:17000000, units:4,  possession:'Dec 2025', partnerComm:60000,  netComm:280000, status:'Active', amenities:'Pool, Gym', rera:'P52100009'},
-      ];
-      renderInventory();
+      loadFallbackInventory();
     });
+}
+
+function loadFallbackInventory() {
+  document.getElementById('inv-tbody').innerHTML =
+    '<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--red)">' +
+    '⚠️ Unable to fetch inventory from Google Sheets.<br>' +
+    '<span style="font-size:12px;color:var(--muted);margin-top:8px;display:block">' +
+    'Make sure Apps Script v5 is deployed. ' +
+    '<a href="https://script.google.com" target="_blank" style="color:var(--gold)">Open Apps Script →</a>' +
+    '</span></td></tr>';
+  document.getElementById('inv-count').textContent = '';
 }
 
 function renderInventory() {
