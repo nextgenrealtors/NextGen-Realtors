@@ -4,10 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NextGen Realtors · Command Center</title>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<!-- v20260305-1002 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -48,19 +44,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   padding: 10px 20px; overflow-x: auto;
 }
 .nav::-webkit-scrollbar { display: none; }
-.nav-logo { margin-right: 16px; flex-shrink: 0; }
-.nav-logo img {
-  height: 38px; width: auto; max-width: 130px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #ffffff 0%, #f5f0e8 100%);
-  padding: 4px 8px;
-  box-shadow: 0 0 0 1px rgba(201,168,76,.4), 0 4px 16px rgba(201,168,76,.25), 0 1px 3px rgba(0,0,0,.4);
-  object-fit: contain;
-  transition: box-shadow .2s;
-}
-.nav-logo img:hover {
-  box-shadow: 0 0 0 1px rgba(201,168,76,.7), 0 6px 24px rgba(201,168,76,.45), 0 2px 6px rgba(0,0,0,.4);
-}
+.nav-logo { margin-right: 12px; opacity: 0.9; flex-shrink: 0; }
+.nav-logo img { height: 36px; width: 36px; border-radius: 6px; }
 .nav-tab {
   padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
   cursor: pointer; border: none; background: transparent; color: var(--muted);
@@ -177,9 +162,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .priority-box {
   background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r);
   padding: 16px; margin-left: auto; width: 280px;
-  transition: border-color .15s, box-shadow .15s;
 }
-.priority-box:hover { border-color: var(--gold); box-shadow: 0 4px 16px rgba(201,168,76,.15); }
 @media(max-width:700px){ .priority-box{width:100%;margin-left:0;margin-top:16px} }
 .priority-hdr { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
 .priority-item { font-size: 13px; line-height: 1.5; color: var(--text); margin-bottom: 6px; }
@@ -438,8 +421,8 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
         <div class="cmd-sub">Your brokerage intelligence system is live.</div>
       </div>
     </div>
-    <div class="priority-box" onclick="kpiDrill('hot')" title="Click to see all hot leads" style="cursor:pointer">
-      <div class="priority-hdr">⚡ Today's Priority <span style="font-size:10px;color:var(--gold);float:right;margin-top:2px">VIEW ALL →</span></div>
+    <div class="priority-box">
+      <div class="priority-hdr">⚡ Today's Priority</div>
       <div id="priority-content" style="color:var(--muted);font-size:13px">Loading...</div>
     </div>
   </div>
@@ -476,23 +459,14 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
     <div class="section-card">
       <div class="section-hdr">
         <span class="section-title">📞 Priority Call List — Do This First</span>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <select id="cl-status-filter" onchange="renderCommand()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 8px;font-size:12px">
-            <option value="">All Status</option>
-            <option value="Hot">🔥 Hot</option>
-            <option value="Active">✅ Active</option>
-            <option value="Warm">🌤 Warm</option>
-            <option value="Cold">❄️ Cold</option>
-          </select>
-          <label class="today-toggle"><input type="checkbox" id="today-only" onchange="renderCommand()"> Today only</label>
-          <button class="refresh-btn" onclick="loadLiveData()" title="Refresh">⟳</button>
-        </div>
+        <label class="today-toggle"><input type="checkbox" id="today-only" onchange="renderCommand()"> Today only</label>
+        <button class="refresh-btn" onclick="loadLiveData()" title="Refresh">⟳</button>
       </div>
       <div id="call-list"><div class="empty">⏳ Loading leads...</div></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="advisory-card" style="cursor:pointer" onclick="kpiDrill('overdue')" title="Click to see overdue follow-ups">
-        <div class="advisory-title">🤖 AI Advisory <span style="font-size:10px;color:var(--gold);float:right;margin-top:2px">OVERDUE LEADS →</span></div>
+      <div class="advisory-card">
+        <div class="advisory-title">🤖 AI Advisory</div>
         <div id="advisory-content"><div style="color:var(--muted);font-size:13px">Loading...</div></div>
       </div>
     </div>
@@ -529,26 +503,8 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
       <option>Hinjewadi</option><option>Mundhwa</option><option>Wadgaon Sheri</option>
       <option>Yerawada</option><option>Pune Station</option>
     </select>
-    <select id="flt-source" onchange="renderLeads()">
-      <option value="">All Sources</option>
-      <option>Referral</option><option>Instagram</option><option>Walk-in</option>
-      <option>Housing.com</option><option>Google Ads</option><option>99Acres</option>
-      <option>WhatsApp</option><option>MagicBricks</option><option>Landing Page</option>
-    </select>
-    <select id="flt-cfg" onchange="renderLeads()">
-      <option value="">All Configs</option>
-      <option>1 BHK</option><option>2 BHK</option><option>2.5 BHK</option><option>3 BHK</option><option>4 BHK</option>
-    </select>
-    <select id="flt-score" onchange="renderLeads()">
-      <option value="">All Scores</option>
-      <option value="hot">🔥 70+ Hot</option>
-      <option value="active">50–69 Active</option>
-      <option value="warm">30–49 Warm</option>
-      <option value="cold">0–29 Cold</option>
-    </select>
     <input type="date" id="flt-from" onchange="renderLeads()" title="From date">
     <input type="date" id="flt-to"   onchange="renderLeads()" title="To date">
-    <button class="btn-sm" style="color:var(--muted);font-size:11px" onclick="clearAllFilters()">✕ Clear</button>
     <button class="btn-sm" onclick="clearDateFilter()">✕ Clear dates</button>
     <button class="btn-sm btn-gold" onclick="openCalc()">🧮 Calc</button>
     <span id="lead-count" style="font-size:12px;color:var(--muted);white-space:nowrap;margin-left:4px"></span>
@@ -924,7 +880,7 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
 // ════════════════════════════════════════════════════════
 const GAS_URL     = 'https://script.google.com/macros/s/AKfycbxL-KrU7CJis-TEKF1Jf5gzb0TrtGXtRk9Qak1fLSgZ69xFDEioLMaRAfzeS5v73PNLZg/exec';
 const GAS_API_KEY = 'NGR_2026_SECURE'; // Must match CONFIG.API_KEY in Apps Script v5
-const API_KEY = 'NG2026PUNE'; // must match CONFIG.API_KEY in Apps Script
+const API_KEY = 'NGR_2026_SECURE';     // Must match CONFIG.API_KEY in Apps Script v5
 
 // ════════════════════════════════════════════════════════
 // STATE
@@ -1160,9 +1116,8 @@ function loadLiveData() {
   fetch(GAS_URL + '?action=get_leads&key=' + API_KEY + '&t=' + Date.now())
     .then(r => r.text())
     .then(text => {
-      // Try plain JSON first (Apps Script v5), then strip JSONP wrapper
-      let _tmpJson; try { _tmpJson = JSON.parse(text); } catch(e) { _tmpJson = null; }
-      const clean = _tmpJson ? text : text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
+      // Strip JSONP wrapper if present: callback({...})
+      const clean = text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
       const json = JSON.parse(clean);
       if (json && json.leads) {
         LEADS = processLeads(json.leads);
@@ -1292,13 +1247,14 @@ function renderCommand() {
 
   // Call list
   const todayOnly = document.getElementById('today-only').checked;
-  const clStatusFilter = (document.getElementById('cl-status-filter')||{}).value || '';
   let callLeads = LEADS
     .filter(l => l.stage !== 'Closed' && l.stage !== 'Lost')
-    .filter(l => !clStatusFilter || l.status === clStatusFilter)
     .filter(l => !todayOnly || l.status === 'Hot' || l.dueOffset <= 0)
-    .sort((a,b) => b.score - a.score)
-    .slice(0, 20);
+    .sort((a,b) => {
+      if (a.dueOffset !== b.dueOffset) return a.dueOffset - b.dueOffset;
+      return b.score - a.score;
+    })
+    .slice(0, 15);
 
   if (callLeads.length === 0) {
     document.getElementById('call-list').innerHTML = '<div class="empty">✅ No calls due' + (todayOnly ? ' today' : '') + '</div>';
@@ -1310,9 +1266,9 @@ function renderCommand() {
         : l.dueOffset === 0
         ? `<span class="call-due due-today">DUE TODAY</span>`
         : `<span class="call-due due-ok">in ${l.dueOffset}d</span>`;
-      return `<div class="call-item ${cls}" onclick="openModal('${l.id}')" style="cursor:pointer">
-        <div style="flex:1">
-          <div class="call-name">${l.name} <span style="font-size:10px;font-family:var(--mono);color:${l.score>=70?'var(--red)':l.score>=50?'var(--orange)':'var(--muted)'};font-weight:700">${l.score}/100</span></div>
+      return `<div class="call-item ${cls}" onclick="openModal('${l.id}')">
+        <div>
+          <div class="call-name">${l.name}</div>
           <div class="call-meta">${l.cfg} · ${l.loc} · ${fmtBudget(l.bmin,l.bmax)} ${srcBadge(l.source)}</div>
         </div>
         <div style="text-align:right">${dueTxt}<br>${statusPill(l.status)}</div>
@@ -1338,15 +1294,12 @@ function renderCommand() {
 // RENDER — LEADS TABLE
 // ════════════════════════════════════════════════════════
 function renderLeads() {
-  const q      = (document.getElementById('leads-search').value||'').toLowerCase();
-  const fSt    = document.getElementById('flt-status').value;
-  const fStg   = document.getElementById('flt-stage').value;
-  const fLoc   = document.getElementById('flt-loc').value;
-  const fSrc   = document.getElementById('flt-source') ? document.getElementById('flt-source').value : '';
-  const fCfg   = document.getElementById('flt-cfg')    ? document.getElementById('flt-cfg').value    : '';
-  const fScore = document.getElementById('flt-score')  ? document.getElementById('flt-score').value  : '';
-  const fFrom  = document.getElementById('flt-from').value;
-  const fTo    = document.getElementById('flt-to').value;
+  const q    = (document.getElementById('leads-search').value||'').toLowerCase();
+  const fSt  = document.getElementById('flt-status').value;
+  const fStg = document.getElementById('flt-stage').value;
+  const fLoc = document.getElementById('flt-loc').value;
+  const fFrom= document.getElementById('flt-from').value;
+  const fTo  = document.getElementById('flt-to').value;
 
   // Update sort header arrows
   document.querySelectorAll('th').forEach(th => th.classList.remove('asc','desc'));
@@ -1401,12 +1354,6 @@ function renderLeads() {
     if (fSt  && l.status !== fSt)  return false;
     if (fStg && l.stage  !== fStg) return false;
     if (fLoc && l.loc    !== fLoc) return false;
-    if (fSrc && (l.source||'').trim() !== fSrc) return false;
-    if (fCfg && l.cfg    !== fCfg) return false;
-    if (fScore === 'hot'    && l.score < 70)  return false;
-    if (fScore === 'active' && (l.score < 50 || l.score >= 70)) return false;
-    if (fScore === 'warm'   && (l.score < 30 || l.score >= 50)) return false;
-    if (fScore === 'cold'   && l.score >= 30) return false;
     if (fFrom) {
       const d = new Date(l.dateAdded); const from = new Date(fFrom);
       if (d < from) return false;
@@ -1461,12 +1408,6 @@ function sortLeads(key) {
 function clearDateFilter() {
   document.getElementById('flt-from').value = '';
   document.getElementById('flt-to').value   = '';
-  renderLeads();
-}
-function clearAllFilters() {
-  ['flt-status','flt-stage','flt-loc','flt-source','flt-cfg','flt-score','leads-search','flt-from','flt-to']
-    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  window._kpiFilter = null;
   renderLeads();
 }
 
@@ -1874,14 +1815,12 @@ let LIVE_INV = []; // fetched from Sheets
 let invSortKey = 'project', invSortDir = 1;
 
 function loadInventory() {
-  // Strategy: fetch() first, JSONP fallback (same as loadLiveData)
   fetch(GAS_URL + '?action=get_inventory&key=' + API_KEY + '&t=' + Date.now())
     .then(r => r.text())
     .then(text => {
       try {
-        let _j; try { _j = JSON.parse(text); } catch(e) { _j = null; }
-        const clean = _j ? text : text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
-        const json = JSON.parse(clean);
+        const clean = text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
+        const json  = JSON.parse(clean);
         if (json && json.inventory && json.inventory.length > 0) {
           INVENTORY_DATA = json.inventory;
           renderInventory();
@@ -1890,28 +1829,7 @@ function loadInventory() {
       } catch(e) {}
       loadFallbackInventory();
     })
-    .catch(() => {
-      // CORS blocked — use JSONP via script tag
-      const cb = 'nginv' + Date.now();
-      const s  = document.createElement('script');
-      window[cb] = function(json) {
-        delete window[cb];
-        try { document.head.removeChild(s); } catch(e) {}
-        if (json && json.inventory && json.inventory.length > 0) {
-          INVENTORY_DATA = json.inventory;
-          renderInventory();
-        } else {
-          loadFallbackInventory();
-        }
-      };
-      s.onerror = function() {
-        delete window[cb];
-        try { document.head.removeChild(s); } catch(e) {}
-        loadFallbackInventory();
-      };
-      s.src = GAS_URL + '?action=get_inventory&key=' + API_KEY + '&callback=' + cb;
-      document.head.appendChild(s);
-    });
+    .catch(() => loadFallbackInventory());
 }
 
 function getInvData() {
@@ -2050,39 +1968,43 @@ function sourceDrill(source) {
   toast('💎 Source: ' + source);
 }
 
-// ── KPI drill-down: click a KPI card → jump to filtered leads/pipeline ──
+// ── KPI drill-down: click a KPI card → jump to filtered leads ──
 function kpiDrill(type) {
-  // Pipeline KPI → go to Pipeline tab
-  if (type === 'pipeline') {
-    const pipeTab = document.querySelectorAll('.nav-tab')[3];
-    switchTab('pipeline', pipeTab);
-    return;
-  }
+  const statusEl = document.getElementById('flt-status');
+  const stageEl  = document.getElementById('flt-stage');
+  const searchEl = document.getElementById('leads-search');
 
-  // Reset all leads filters
-  document.getElementById('flt-status').value = '';
-  document.getElementById('flt-stage').value  = '';
-  document.getElementById('leads-search').value = '';
+  // Reset all filters first
+  statusEl.value = '';
+  stageEl.value  = '';
+  searchEl.value = '';
   document.getElementById('flt-loc').value = '';
   clearDateFilter();
 
-  // Store filter — use _kpiPending so switchTab's renderLeads() doesn't consume it
   switch(type) {
-    case 'hot':     window._kpiPending = l => l.status === 'Hot'; break;
-    case 'overdue': window._kpiPending = l => l.dueOffset < 0 && l.stage !== 'Closed' && l.stage !== 'Lost'; break;
-    case 'visits':  window._kpiPending = l => l.stage === 'Site Visit'; break;
-    case 'closed':  window._kpiPending = l => l.stage === 'Closed'; break;
+    case 'hot':
+      statusEl.value = 'Hot';
+      break;
+    case 'overdue':
+      // Filter to overdue: set a custom marker via search (use status Active+Hot with overdue)
+      // We'll use a global kpiFilter that renderLeads checks
+      window._kpiFilter = l => l.dueOffset < 0 && l.stage !== 'Closed' && l.stage !== 'Lost';
+      break;
+    case 'pipeline':
+      // Site Visit + Negotiation
+      window._kpiFilter = l => ['Site Visit','Negotiation'].includes(l.stage);
+      break;
+    case 'visits':
+      stageEl.value = 'Site Visit';
+      break;
+    case 'closed':
+      stageEl.value = 'Closed';
+      break;
   }
-
-  // Switch to leads tab — this calls renderLeads() once
-  const leadsTab = document.querySelectorAll('.nav-tab')[1];
-  switchTab('leads', leadsTab);
-  // Apply filter AFTER switchTab's renderLeads has run
-  if (window._kpiPending) {
-    window._kpiFilter = window._kpiPending;
-    window._kpiPending = null;
-    renderLeads();
-  }
+  switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
+  renderLeads();
+  // Clear custom filter after render
+  if (type !== 'overdue' && type !== 'pipeline') window._kpiFilter = null;
 }
 
 // ════════════════════════════════════════════════════════
@@ -2138,14 +2060,21 @@ function loadInventory() {
 }
 
 function loadFallbackInventory() {
-  document.getElementById('inv-tbody').innerHTML =
-    '<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--red)">' +
-    '⚠️ Unable to fetch inventory from Google Sheets.<br>' +
-    '<span style="font-size:12px;color:var(--muted);margin-top:8px;display:block">' +
-    'Make sure Apps Script v5 is deployed. ' +
-    '<a href="https://script.google.com" target="_blank" style="color:var(--gold)">Open Apps Script →</a>' +
-    '</span></td></tr>';
-  document.getElementById('inv-count').textContent = '';
+      // Use hardcoded inventory as fallback
+      INVENTORY_DATA = [
+        {rowNum:2, project:'Godrej Horizon',     builder:'Godrej Properties', loc:'Bavdhan',       cfg:'2 BHK',   pmin:8200000,  pmax:12000000, units:8,  possession:'Ready',    partnerComm:40000,  netComm:204000, status:'Active', amenities:'Pool, Gym', rera:'P52100001'},
+        {rowNum:3, project:'Godrej Horizon',     builder:'Godrej Properties', loc:'Bavdhan',       cfg:'3 BHK',   pmin:13500000, pmax:19000000, units:4,  possession:'Ready',    partnerComm:60000,  netComm:320000, status:'Active', amenities:'Pool, Gym', rera:'P52100001'},
+        {rowNum:4, project:'VTP Bellissimo',     builder:'VTP Realty',        loc:'Kharadi',       cfg:'2 BHK',   pmin:8800000,  pmax:13000000, units:12, possession:'Dec 2025', partnerComm:40000,  netComm:216000, status:'Active', amenities:'Club house, Gym', rera:'P52100002'},
+        {rowNum:5, project:'VTP Bellissimo',     builder:'VTP Realty',        loc:'Kharadi',       cfg:'3 BHK',   pmin:12000000, pmax:19000000, units:6,  possession:'Dec 2025', partnerComm:60000,  netComm:320000, status:'Active', amenities:'Club house, Gym', rera:'P52100002'},
+        {rowNum:6, project:'Kolte Patil',        builder:'Kolte Patil',       loc:'Hinjewadi',     cfg:'2 BHK',   pmin:7200000,  pmax:11000000, units:20, possession:'Jun 2026', partnerComm:40000,  netComm:180000, status:'Active', amenities:'Garden, Gym', rera:'P52100003'},
+        {rowNum:7, project:'Panchshil Eon',      builder:'Panchshil Realty',  loc:'Kharadi',       cfg:'2.5 BHK', pmin:10500000, pmax:15000000, units:5,  possession:'Ready',    partnerComm:50000,  netComm:250000, status:'Active', amenities:'5-star amenities', rera:'P52100004'},
+        {rowNum:8, project:'Kumar Prospera',     builder:'Kumar Properties',  loc:'Wadgaon Sheri', cfg:'2 BHK',   pmin:7500000,  pmax:11000000, units:15, possession:'Mar 2026', partnerComm:40000,  netComm:185000, status:'Active', amenities:'Garden', rera:'P52100005'},
+        {rowNum:9, project:'Magarpatta Roost',   builder:'Magarpatta Corp',   loc:'Mundhwa',       cfg:'3 BHK',   pmin:13000000, pmax:19500000, units:3,  possession:'Ready',    partnerComm:60000,  netComm:330000, status:'Active', amenities:'Township', rera:'P52100006'},
+        {rowNum:10,project:'Baner Greens',       builder:'Paranjape Schemes', loc:'Baner',         cfg:'2 BHK',   pmin:9200000,  pmax:14000000, units:10, possession:'Sep 2026', partnerComm:40000,  netComm:234000, status:'Active', amenities:'Pool, Gym', rera:'P52100007'},
+        {rowNum:11,project:'Stellar One',        builder:'VTP Realty',        loc:'Pune Station',  cfg:'2 BHK',   pmin:9500000,  pmax:13500000, units:7,  possession:'Ready',    partnerComm:40000,  netComm:224000, status:'Active', amenities:'Rooftop garden', rera:'P52100008'},
+        {rowNum:12,project:'Solaris One',        builder:'Gera Developments', loc:'Yerawada',      cfg:'3 BHK',   pmin:11500000, pmax:17000000, units:4,  possession:'Dec 2025', partnerComm:60000,  netComm:280000, status:'Active', amenities:'Pool, Gym', rera:'P52100009'},
+      ];
+      renderInventory();
 }
 
 function renderInventory() {
@@ -2308,33 +2237,15 @@ function renderCommandFunnelAndSource() {
 }
 
 function kpiDrill_stage(stage) {
-  document.getElementById('flt-status').value = '';
-  document.getElementById('flt-stage').value  = '';
-  document.getElementById('leads-search').value = '';
-  document.getElementById('flt-loc').value = '';
-  clearDateFilter();
-  window._kpiPending = l => l.stage === stage;
+  window._kpiFilter = l => l.stage === stage;
   switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
-  if (window._kpiPending) {
-    window._kpiFilter  = window._kpiPending;
-    window._kpiPending = null;
-    renderLeads();
-  }
+  renderLeads();
 }
 
 function kpiDrill_source(src) {
-  document.getElementById('flt-status').value = '';
-  document.getElementById('flt-stage').value  = '';
-  document.getElementById('leads-search').value = '';
-  document.getElementById('flt-loc').value = '';
-  clearDateFilter();
-  window._kpiPending = l => (l.source||'').trim() === src.trim();
+  window._kpiFilter = l => l.source === src;
   switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
-  if (window._kpiPending) {
-    window._kpiFilter  = window._kpiPending;
-    window._kpiPending = null;
-    renderLeads();
-  }
+  renderLeads();
 }
 
 // ════════════════════════════════════════════════════════
