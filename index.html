@@ -421,8 +421,8 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
         <div class="cmd-sub">Your brokerage intelligence system is live.</div>
       </div>
     </div>
-    <div class="priority-box">
-      <div class="priority-hdr">⚡ Today's Priority</div>
+    <div class="priority-box" onclick="priorityDrill()" style="cursor:pointer;transition:border-color .2s" onmouseenter="this.style.borderColor='var(--gold)'" onmouseleave="this.style.borderColor=''">
+      <div class="priority-hdr">⚡ Today's Priority <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px">↗ click to view</span></div>
       <div id="priority-content" style="color:var(--muted);font-size:13px">Loading...</div>
     </div>
   </div>
@@ -465,8 +465,8 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
       <div id="call-list"><div class="empty">⏳ Loading leads...</div></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="advisory-card">
-        <div class="advisory-title">🤖 AI Advisory</div>
+      <div class="advisory-card" onclick="priorityDrill()" style="cursor:pointer" title="Click to see priority leads">
+        <div class="advisory-title">🤖 AI Advisory <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px">↗ click to act</span></div>
         <div id="advisory-content"><div style="color:var(--muted);font-size:13px">Loading...</div></div>
       </div>
     </div>
@@ -503,9 +503,19 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
       <option>Hinjewadi</option><option>Mundhwa</option><option>Wadgaon Sheri</option>
       <option>Yerawada</option><option>Pune Station</option>
     </select>
+    <select id="flt-source" onchange="renderLeads()">
+      <option value="">All Sources</option>
+      <option>Walk-in</option><option>Phone Call</option><option>Referral</option>
+      <option>MagicBricks</option><option>99Acres</option><option>Housing.com</option>
+      <option>Instagram</option><option>Google Ads</option><option>WhatsApp</option>
+    </select>
+    <select id="flt-config" onchange="renderLeads()">
+      <option value="">All Config</option>
+      <option>1 BHK</option><option>2 BHK</option><option>2.5 BHK</option><option>3 BHK</option><option>4 BHK</option>
+    </select>
     <input type="date" id="flt-from" onchange="renderLeads()" title="From date">
     <input type="date" id="flt-to"   onchange="renderLeads()" title="To date">
-    <button class="btn-sm" onclick="clearDateFilter()">✕ Clear dates</button>
+    <button class="btn-sm" onclick="clearAllFilters()">✕ Clear all</button>
     <button class="btn-sm btn-gold" onclick="openCalc()">🧮 Calc</button>
     <span id="lead-count" style="font-size:12px;color:var(--muted);white-space:nowrap;margin-left:4px"></span>
   </div>
@@ -1298,6 +1308,8 @@ function renderLeads() {
   const fSt  = document.getElementById('flt-status').value;
   const fStg = document.getElementById('flt-stage').value;
   const fLoc = document.getElementById('flt-loc').value;
+  const fSrc = document.getElementById('flt-source') ? document.getElementById('flt-source').value : '';
+  const fCfg = document.getElementById('flt-config') ? document.getElementById('flt-config').value : '';
   const fFrom= document.getElementById('flt-from').value;
   const fTo  = document.getElementById('flt-to').value;
 
@@ -1354,6 +1366,8 @@ function renderLeads() {
     if (fSt  && l.status !== fSt)  return false;
     if (fStg && l.stage  !== fStg) return false;
     if (fLoc && l.loc    !== fLoc) return false;
+    if (fSrc && l.source !== fSrc) return false;
+    if (fCfg && l.cfg    !== fCfg) return false;
     if (fFrom) {
       const d = new Date(l.dateAdded); const from = new Date(fFrom);
       if (d < from) return false;
@@ -1822,6 +1836,7 @@ function loadInventory() {
         const clean = text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
         const json  = JSON.parse(clean);
         if (json && json.inventory && json.inventory.length > 0) {
+          LIVE_INV = json.inventory;
           INVENTORY_DATA = json.inventory;
           renderInventory();
           return;
@@ -1949,20 +1964,48 @@ function submitAddProperty() {
 }
 
 // ── Funnel drill: click a funnel stage → jump to filtered leads ──
+// ── Priority drill: click Today's Priority → leads filtered to hot+overdue ──
+function priorityDrill() {
+  window._kpiFilter = l =>
+    l.status === 'Hot' ||
+    (l.dueOffset <= 0 && l.stage !== 'Closed' && l.stage !== 'Lost');
+  switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
+  renderLeads();
+  toast("⚡ Today's Priority leads");
+}
+
+function clearAllFilters() {
+  document.getElementById('leads-search').value = '';
+  document.getElementById('flt-status').value = '';
+  document.getElementById('flt-stage').value = '';
+  document.getElementById('flt-loc').value = '';
+  const src = document.getElementById('flt-source');
+  if (src) src.value = '';
+  const cfg = document.getElementById('flt-config');
+  if (cfg) cfg.value = '';
+  document.getElementById('flt-from').value = '';
+  document.getElementById('flt-to').value = '';
+  window._kpiFilter = null;
+  renderLeads();
+}
+function clearDateFilter() { clearAllFilters(); }
+
 function funnelDrill(stage) {
+  // Go to Pipeline tab and highlight that stage column
+  switchTab('pipeline', document.querySelectorAll('.nav-tab')[3]);
+  // Also set leads filter so user can switch to leads view if needed
   document.getElementById('flt-stage').value = stage;
   document.getElementById('flt-status').value = '';
   document.getElementById('leads-search').value = '';
-  switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
-  renderLeads();
-  toast('📊 Showing: ' + stage);
+  toast('📊 Pipeline: ' + stage);
 }
 
 // ── Source drill: click a source → jump to filtered leads ─────────
 function sourceDrill(source) {
-  document.getElementById('leads-search').value = source;
+  document.getElementById('leads-search').value = '';
   document.getElementById('flt-status').value = '';
   document.getElementById('flt-stage').value = '';
+  document.getElementById('flt-source').value = source;
   switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
   renderLeads();
   toast('💎 Source: ' + source);
@@ -2042,22 +2085,6 @@ document.addEventListener('keydown', e => {
 // INVENTORY STATE + RENDER
 // ════════════════════════════════════════════════════════
 let INVENTORY_DATA = [];
-
-function loadInventory() {
-  fetch(GAS_URL + '?action=get_inventory&key=' + API_KEY + '&t=' + Date.now())
-    .then(r => r.text())
-    .then(text => {
-      const clean = text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
-      const json  = JSON.parse(clean);
-      if (json && json.inventory) {
-        LIVE_INV = json.inventory;
-        renderInventory();
-      }
-    })
-    .catch(() => {
-      loadFallbackInventory();
-    });
-}
 
 function loadFallbackInventory() {
       // Use hardcoded inventory as fallback
