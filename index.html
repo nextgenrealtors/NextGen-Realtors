@@ -390,6 +390,34 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
 .inv-status-lowstock  { background: var(--orange-dim); color: var(--orange); }
 .inv-status-soldout   { background: var(--red-dim);   color: var(--red); }
 
+
+/* ── Priority Popup ──────────────────────────────────── */
+.priority-popup-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.65);
+  z-index:1100; align-items:center; justify-content:center;
+}
+.priority-popup-overlay.open { display:flex; }
+.priority-popup {
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--r);
+  width:min(540px,95vw); max-height:80vh; display:flex; flex-direction:column;
+  box-shadow:0 8px 40px rgba(0,0,0,.5);
+}
+.priority-popup-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px; border-bottom:1px solid var(--border);
+}
+.priority-popup-hdr h3 { font-size:15px; font-weight:700; color:var(--gold); margin:0; }
+.priority-popup-body { overflow-y:auto; padding:10px 14px; flex:1; }
+.priority-lead-card {
+  background:var(--bg3); border:1px solid var(--border); border-radius:10px;
+  padding:12px 14px; margin-bottom:10px; cursor:pointer; transition:border-color .15s;
+}
+.priority-lead-card:hover { border-color:var(--gold); }
+.priority-lead-card .plc-row1 { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.priority-lead-card .plc-name { font-weight:700; font-size:14px; }
+.priority-lead-card .plc-score { font-family:var(--mono); font-size:13px; font-weight:700; }
+.priority-lead-card .plc-row2 { font-size:12px; color:var(--muted); margin-bottom:8px; }
+.priority-lead-card .plc-actions { display:flex; gap:8px; }
 </style>
 </head>
 <body>
@@ -465,7 +493,7 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
       <div id="call-list"><div class="empty">⏳ Loading leads...</div></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="advisory-card" onclick="priorityDrill()" style="cursor:pointer" title="Click to see priority leads">
+      <div class="advisory-card">
         <div class="advisory-title">🤖 AI Advisory <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px">↗ click to act</span></div>
         <div id="advisory-content"><div style="color:var(--muted);font-size:13px">Loading...</div></div>
       </div>
@@ -546,9 +574,18 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
 
 <!-- ══ PIPELINE PANEL ══ -->
 <div class="panel" id="panel-pipeline">
-  <div style="margin-bottom:12px;font-size:13px;color:var(--muted)">
-    Pipeline commission estimate: <strong id="pipe-comm-total" style="color:var(--gold)">—</strong>
-    &nbsp;·&nbsp; <span style="font-size:12px">Drag cards between columns to update stage</span>
+  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:13px">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div>💰 Pipeline estimate: <strong id="pipe-comm-total" style="color:var(--gold);font-size:15px">—</strong></div>
+      <div style="color:var(--muted);font-size:12px">
+        Formula: <span style="color:var(--text)">Max Budget × 2% commission × 35% close probability</span>
+        &nbsp;·&nbsp; Only <em>Site Visit</em> + <em>Negotiation</em> leads counted
+      </div>
+    </div>
+    <div style="color:var(--muted);font-size:11px;margin-top:6px">
+      Example: ₹1Cr lead → ₹1,00,000 × 2% = ₹2,000 × 35% = ₹700 expected earnings per lead at this stage
+    </div>
+    <div style="color:var(--muted);font-size:11px;margin-top:2px">Drag cards between columns to move a lead to the next stage. Click any card to open full profile.</div>
   </div>
   <div class="pipe-board" id="pipe-board"></div>
 </div>
@@ -559,41 +596,17 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
   <div id="scripts-list"></div>
 </div>
 
-<!-- ══ INVENTORY PANEL ══ -->
-<div class="panel" id="panel-inventory">
-  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-    <input type="search" id="inv-search" placeholder="🔍  Search project, builder, area..." style="flex:1;min-width:180px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px;font-family:var(--sans)" oninput="renderInventory()">
-    <select id="inv-loc" onchange="renderInventory()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px;font-family:var(--sans)">
-      <option value="">All Areas</option>
-      <option>Bavdhan</option><option>Kharadi</option><option>Baner</option>
-      <option>Hinjewadi</option><option>Mundhwa</option><option>Wadgaon Sheri</option>
-      <option>Yerawada</option><option>Pune Station</option>
-    </select>
-    <select id="inv-cfg" onchange="renderInventory()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px;font-family:var(--sans)">
-      <option value="">All Configs</option>
-      <option>1 BHK</option><option>2 BHK</option><option>2.5 BHK</option><option>3 BHK</option><option>4 BHK</option>
-    </select>
-    <select id="inv-status" onchange="renderInventory()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px;font-family:var(--sans)">
-      <option value="">All Status</option><option>Available</option><option>Low Stock</option><option>Sold Out</option>
-    </select>
-    <span id="inv-count" style="font-size:12px;color:var(--muted)"></span>
-    <button class="btn-sm btn-gold" onclick="openAddProperty()">＋ Add Property</button>
-  </div>
-  <div style="overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)">
-    <table>
-      <thead><tr>
-        <th onclick="sortInv('project')">Project</th>
-        <th onclick="sortInv('builder')">Builder</th>
-        <th onclick="sortInv('loc')">Area</th>
-        <th onclick="sortInv('cfg')">Config</th>
-        <th onclick="sortInv('pmin')">Price Range</th>
-        <th onclick="sortInv('netComm')">Net Comm</th>
-        <th onclick="sortInv('units')">Units</th>
-        <th onclick="sortInv('status')">Status</th>
-        <th>Action</th>
-      </tr></thead>
-      <tbody id="inv-tbody"><tr><td colspan="9" class="empty">⏳ Loading inventory...</td></tr></tbody>
-    </table>
+
+<!-- ══ TODAY'S PRIORITY POPUP ══ -->
+<div class="priority-popup-overlay" id="priority-popup-overlay" onclick="if(event.target===this)closePriorityPopup()">
+  <div class="priority-popup">
+    <div class="priority-popup-hdr">
+      <h3>⚡ Today's Priority Leads</h3>
+      <button class="btn-sm" onclick="closePriorityPopup()" style="padding:4px 10px">✕ Close</button>
+    </div>
+    <div class="priority-popup-body" id="priority-popup-body">
+      <div class="empty">Loading...</div>
+    </div>
   </div>
 </div>
 
@@ -820,8 +833,8 @@ kbd { background: var(--bg4); border: 1px solid var(--border); border-radius: 4p
           <th onclick="sortInv('loc')">Area</th>
           <th onclick="sortInv('cfg')">Config</th>
           <th onclick="sortInv('pmin')">Price Range</th>
-          <th onclick="sortInv('partnerComm')">Partner ₹</th>
-          <th onclick="sortInv('netComm')">Net ₹</th>
+          <th onclick="sortInv('partnerComm')" title="Amount paid to referral partner on closing">Partner Payout 💡</th>
+          <th onclick="sortInv('netComm')" title="Your earnings after paying partner (2% of max price minus partner payout)">Your Earnings 💡</th>
           <th>Status</th>
           <th>Actions</th>
         </tr>
@@ -1260,10 +1273,7 @@ function renderCommand() {
   let callLeads = LEADS
     .filter(l => l.stage !== 'Closed' && l.stage !== 'Lost')
     .filter(l => !todayOnly || l.status === 'Hot' || l.dueOffset <= 0)
-    .sort((a,b) => {
-      if (a.dueOffset !== b.dueOffset) return a.dueOffset - b.dueOffset;
-      return b.score - a.score;
-    })
+    .sort((a,b) => b.score - a.score)
     .slice(0, 15);
 
   if (callLeads.length === 0) {
@@ -1278,7 +1288,7 @@ function renderCommand() {
         : `<span class="call-due due-ok">in ${l.dueOffset}d</span>`;
       return `<div class="call-item ${cls}" onclick="openModal('${l.id}')">
         <div>
-          <div class="call-name">${l.name}</div>
+          <div class="call-name">${l.name} <span style="font-family:var(--mono);font-size:11px;color:${l.score>=70?'var(--red)':l.score>=50?'var(--orange)':'var(--gold)'};font-weight:700">● ${l.score}</span></div>
           <div class="call-meta">${l.cfg} · ${l.loc} · ${fmtBudget(l.bmin,l.bmax)} ${srcBadge(l.source)}</div>
         </div>
         <div style="text-align:right">${dueTxt}<br>${statusPill(l.status)}</div>
@@ -1289,13 +1299,35 @@ function renderCommand() {
   // Advisory
   const advEl = document.getElementById('advisory-content');
   const advItems = [];
-  if (hot.length >= 3) advItems.push(`You have ${hot.length} hot leads. Prioritise calls before noon — conversion drops 40% after 4pm.`);
-  if (overdue.length > 0) advItems.push(`${overdue.length} follow-up${overdue.length>1?'s':''} are overdue. Call before sending WhatsApp — voice converts 3× better.`);
   const negotiating = LEADS.filter(l => l.stage === 'Negotiation');
-  if (negotiating.length > 0) advItems.push(`${negotiating.length} lead${negotiating.length>1?'s':''} in negotiation. Send payment plan + site photos to build urgency.`);
-  if (visits.length === 0 && LEADS.length > 5) advItems.push(`No site visits scheduled. Call your top 3 warm leads and offer a weekend slot.`);
-  if (advItems.length === 0) advItems.push('All systems clear. Great day to add new leads via the landing page.');
-  advEl.innerHTML = advItems.map(a => `<div class="advisory-item">${a}</div>`).join('');
+  if (hot.length >= 3) advItems.push({
+    text: `You have ${hot.length} hot leads — prioritise calls before noon. Conversion drops 40% after 4pm.`,
+    filter: l => l.status === 'Hot', label: 'Hot Leads'
+  });
+  if (overdue.length > 0) advItems.push({
+    text: `${overdue.length} follow-up${overdue.length>1?'s':''} overdue — call before sending WhatsApp. Voice converts 3× better.`,
+    filter: l => l.dueOffset < 0 && l.stage !== 'Closed' && l.stage !== 'Lost', label: 'Overdue'
+  });
+  if (negotiating.length > 0) advItems.push({
+    text: `${negotiating.length} lead${negotiating.length>1?'s':''} in negotiation — send payment plan + site photos to build urgency.`,
+    filter: l => l.stage === 'Negotiation', label: 'Negotiation'
+  });
+  if (visits.length === 0 && LEADS.length > 5) advItems.push({
+    text: `No site visits scheduled — call your top warm leads and offer a weekend slot.`,
+    filter: l => l.status === 'Warm' && l.stage !== 'Closed' && l.stage !== 'Lost', label: 'Warm Leads'
+  });
+  if (advItems.length === 0) advItems.push({
+    text: 'All systems clear. Great day to add new leads via the landing page.', filter: null, label: ''
+  });
+  window._advFilters = advItems.map(a => a.filter);
+  advEl.innerHTML = advItems.map((a, idx) => {
+    const clickable = !!a.filter;
+    return '<div class="advisory-item"' +
+      (clickable ? ' onclick="advDrill(' + idx + ')" style="cursor:pointer" title="Click to view these leads"' : '') +
+      '>' + a.text +
+      (clickable ? ' <span style="color:var(--gold);font-size:11px;font-weight:600">↗ ' + a.label + '</span>' : '') +
+      '</div>';
+  }).join('');
 
   renderCommandFunnelAndSource();
 }
@@ -1851,59 +1883,6 @@ function getInvData() {
   return LIVE_INV.length > 0 ? LIVE_INV : INVENTORY;
 }
 
-function renderInventory() {
-  const q      = (document.getElementById('inv-search').value || '').toLowerCase();
-  const fLoc   = document.getElementById('inv-loc').value;
-  const fCfg   = document.getElementById('inv-cfg').value;
-  const fSt    = document.getElementById('inv-status').value;
-
-  let data = getInvData().filter(p => {
-    if (q && !p.project.toLowerCase().includes(q) && !p.builder.toLowerCase().includes(q) &&
-        !(p.loc||'').toLowerCase().includes(q)) return false;
-    if (fLoc && p.loc !== fLoc)    return false;
-    if (fCfg && p.cfg !== fCfg)    return false;
-    if (fSt  && p.status !== fSt)  return false;
-    return true;
-  }).sort((a,b) => {
-    let av = a[invSortKey]||'', bv = b[invSortKey]||'';
-    if (typeof av === 'string') return invSortDir * av.localeCompare(bv);
-    return invSortDir * ((av||0) - (bv||0));
-  });
-
-  document.getElementById('inv-count').textContent = data.length + ' properties';
-
-  const statusColor = { Available:'var(--green)', 'Low Stock':'var(--orange)', 'Sold Out':'var(--red)' };
-  const statusBg    = { Available:'var(--green-dim)', 'Low Stock':'var(--orange-dim)', 'Sold Out':'var(--red-dim)' };
-
-  if (data.length === 0) {
-    document.getElementById('inv-tbody').innerHTML = '<tr><td colspan="9" class="empty">No properties found. Click "+ Add Property" to add your first listing.</td></tr>';
-    return;
-  }
-
-  document.getElementById('inv-tbody').innerHTML = data.map(p => {
-    const stColor = statusColor[p.status] || 'var(--muted)';
-    const stBg    = statusBg[p.status]    || 'var(--bg4)';
-    const matchCount = LEADS.filter(l => {
-      const locOk    = (l.loc||'').toLowerCase() === (p.loc||'').toLowerCase();
-      const budgetOk = (l.bmax||0) >= p.pmin * 0.9 && (l.bmin||0) <= p.pmax * 1.1;
-      return locOk && budgetOk && l.stage !== 'Closed' && l.stage !== 'Lost';
-    }).length;
-    return '<tr>' +
-      '<td><div style="font-weight:700;font-size:14px">' + p.project + '</div></td>' +
-      '<td style="font-size:12px;color:var(--muted)">' + (p.builder||'—') + '</td>' +
-      '<td><span style="color:var(--gold);font-weight:600">' + (p.loc||'—') + '</span></td>' +
-      '<td style="font-size:12px">' + (p.cfg||'—') + '</td>' +
-      '<td style="font-family:var(--mono);font-size:12px;white-space:nowrap">' + fmtBudget(p.pmin,p.pmax) + '</td>' +
-      '<td style="font-family:var(--mono);font-size:12px;color:var(--green);font-weight:700">' + fmtINR(p.netComm||0) + '</td>' +
-      '<td style="font-family:var(--mono);font-size:13px;text-align:center">' + (p.units||0) + '</td>' +
-      '<td><span style="display:inline-block;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;background:' + stBg + ';color:' + stColor + '">' + (p.status||'Available') + '</span></td>' +
-      '<td style="white-space:nowrap">' +
-        (matchCount > 0 ? '<span title="' + matchCount + ' active buyers match this property" style="cursor:default;font-size:11px;color:var(--gold);font-weight:700;margin-right:8px">👥 ' + matchCount + '</span>' : '') +
-        '<button class="wa-btn" onclick="copyPropWA(' + JSON.stringify(p).replace(/"/g, '&quot;') + ')">💬</button>' +
-      '</td>' +
-    '</tr>';
-  }).join('');
-}
 
 function sortInv(key) {
   if (invSortKey === key) invSortDir *= -1; else { invSortKey = key; invSortDir = 1; }
@@ -1966,12 +1945,55 @@ function submitAddProperty() {
 // ── Funnel drill: click a funnel stage → jump to filtered leads ──
 // ── Priority drill: click Today's Priority → leads filtered to hot+overdue ──
 function priorityDrill() {
-  window._kpiFilter = l =>
-    l.status === 'Hot' ||
-    (l.dueOffset <= 0 && l.stage !== 'Closed' && l.stage !== 'Lost');
+  // Build list: Hot leads + overdue follow-ups, sorted by score desc
+  const priorityLeads = LEADS
+    .filter(l => l.status === 'Hot' || (l.dueOffset <= 0 && l.stage !== 'Closed' && l.stage !== 'Lost'))
+    .sort((a, b) => b.score - a.score);
+
+  const body = document.getElementById('priority-popup-body');
+  if (priorityLeads.length === 0) {
+    body.innerHTML = '<div class="empty" style="padding:20px">✅ No priority leads right now. Great job!</div>';
+  } else {
+    body.innerHTML = priorityLeads.map(l => {
+      const scoreColor = l.score >= 70 ? 'var(--red)' : l.score >= 50 ? 'var(--orange)' : 'var(--gold)';
+      const dueTxt = l.dueOffset < 0
+        ? `<span style="color:var(--red);font-weight:700">${Math.abs(l.dueOffset)}d OVERDUE</span>`
+        : l.dueOffset === 0
+        ? `<span style="color:var(--orange);font-weight:700">DUE TODAY</span>`
+        : '';
+      const waMsg = encodeURIComponent('Hi ' + l.name.split(' ')[0] + '! This is Rushabh from NextGen Realtors. I have great ' + (l.cfg||'property') + ' options in ' + (l.loc||'Pune') + ' for you. Can we connect?');
+      return `<div class="priority-lead-card" onclick="closePriorityPopup();openModal('${l.id}')">
+        <div class="plc-row1">
+          <span class="plc-name">${l.name}</span>
+          <span class="plc-score" style="color:${scoreColor}">● ${l.score}/100</span>
+        </div>
+        <div class="plc-row2">
+          ${l.cfg} · ${l.loc} · ${fmtBudget(l.bmin, l.bmax)}
+          ${l.source ? ' · ' + l.source : ''}
+          ${dueTxt ? ' &nbsp;' + dueTxt : ''}
+        </div>
+        <div class="plc-actions" onclick="event.stopPropagation()">
+          ${statusPill(l.status)}
+          <button class="wa-btn" onclick="window.open('https://wa.me/91${l.phone}?text=${waMsg}','_blank')" title="WhatsApp">💬 WhatsApp</button>
+          <button class="btn-sm" style="padding:4px 10px;font-size:12px" onclick="closePriorityPopup();openModal('${l.id}')" title="Open full profile">👤 View</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('priority-popup-overlay').classList.add('open');
+}
+
+
+function advDrill(idx) {
+  const fn = window._advFilters && window._advFilters[idx];
+  if (!fn) return;
+  window._kpiFilter = fn;
   switchTab('leads', document.querySelectorAll('.nav-tab')[1]);
   renderLeads();
-  toast("⚡ Today's Priority leads");
+}
+
+function closePriorityPopup() {
+  document.getElementById('priority-popup-overlay').classList.remove('open');
 }
 
 function clearAllFilters() {
@@ -2034,9 +2056,9 @@ function kpiDrill(type) {
       window._kpiFilter = l => l.dueOffset < 0 && l.stage !== 'Closed' && l.stage !== 'Lost';
       break;
     case 'pipeline':
-      // Site Visit + Negotiation
-      window._kpiFilter = l => ['Site Visit','Negotiation'].includes(l.stage);
-      break;
+      // Go directly to Pipeline board tab
+      switchTab('pipeline', document.querySelectorAll('.nav-tab')[3]);
+      return; // early return, no need to go to leads
     case 'visits':
       stageEl.value = 'Site Visit';
       break;
@@ -2140,8 +2162,8 @@ function renderInventory() {
       <td><span style="color:var(--gold);font-weight:600;font-size:12px">${p.loc}</span></td>
       <td><span class="status-pill pill-active">${p.cfg}</span></td>
       <td style="font-family:var(--mono);font-size:12px">₹${fmtL(p.pmin)}–${fmtL(p.pmax)}<br><span style="color:var(--muted);font-size:10px">${p.units||0} units · ${p.possession||'—'}</span></td>
-      <td style="font-family:var(--mono);font-weight:700;color:var(--orange)">${fmtINR(p.partnerComm||0)}</td>
-      <td style="font-family:var(--mono);font-weight:700;color:var(--green)">${fmtINR(p.netComm||0)}</td>
+      <td style="font-family:var(--mono);font-weight:700;color:var(--orange)" title="Amount paid to referral partner on closing">${fmtINR(p.partnerComm||0)}<div style="font-size:9px;color:var(--muted);font-weight:400">to partner</div></td>
+      <td style="font-family:var(--mono);font-weight:700;color:var(--green)" title="Your net earnings after paying partner (2% of max price minus partner payout)">${fmtINR(p.netComm||0)}<div style="font-size:9px;color:var(--muted);font-weight:400">your earnings</div></td>
       <td><span class="status-pill ${statusColor[p.status]||'pill-cold'}">${p.status||'Active'}</span></td>
       <td onclick="event.stopPropagation()" style="white-space:nowrap">
         <button class="btn-sm" style="padding:4px 8px;font-size:11px;margin-right:4px" onclick="openInvModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">✏️ Edit</button>
