@@ -1874,18 +1874,14 @@ let LIVE_INV = []; // fetched from Sheets
 let invSortKey = 'project', invSortDir = 1;
 
 function loadInventory() {
+  // Strategy: fetch() first, JSONP fallback (same as loadLiveData)
   fetch(GAS_URL + '?action=get_inventory&key=' + API_KEY + '&t=' + Date.now())
     .then(r => r.text())
     .then(text => {
       try {
-        // Try plain JSON first (Apps Script v5 returns JSON directly)
-        let json = null;
-        try { json = JSON.parse(text); } catch(e) {}
-        // Fallback: try stripping JSONP wrapper
-        if (!json) {
-          const clean = text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
-          json = JSON.parse(clean);
-        }
+        let _j; try { _j = JSON.parse(text); } catch(e) { _j = null; }
+        const clean = _j ? text : text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
+        const json = JSON.parse(clean);
         if (json && json.inventory && json.inventory.length > 0) {
           INVENTORY_DATA = json.inventory;
           renderInventory();
@@ -1894,7 +1890,28 @@ function loadInventory() {
       } catch(e) {}
       loadFallbackInventory();
     })
-    .catch(() => loadFallbackInventory());
+    .catch(() => {
+      // CORS blocked — use JSONP via script tag
+      const cb = 'nginv' + Date.now();
+      const s  = document.createElement('script');
+      window[cb] = function(json) {
+        delete window[cb];
+        try { document.head.removeChild(s); } catch(e) {}
+        if (json && json.inventory && json.inventory.length > 0) {
+          INVENTORY_DATA = json.inventory;
+          renderInventory();
+        } else {
+          loadFallbackInventory();
+        }
+      };
+      s.onerror = function() {
+        delete window[cb];
+        try { document.head.removeChild(s); } catch(e) {}
+        loadFallbackInventory();
+      };
+      s.src = GAS_URL + '?action=get_inventory&key=' + API_KEY + '&callback=' + cb;
+      document.head.appendChild(s);
+    });
 }
 
 function getInvData() {
